@@ -2,7 +2,8 @@ QT += \
     core \
     gui \
     widgets \
-    multimedia
+    multimedia \
+    network
 
 TARGET = music_player
 TEMPLATE = app

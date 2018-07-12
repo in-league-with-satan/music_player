@@ -20,6 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <QApplication>
 
 #include "ff_tools.h"
+#include "net_ctrl.h"
 #include "settings.h"
 #include "mainwindow.h"
 
@@ -28,9 +29,28 @@ int main(int argc, char *argv[])
     avLogToQDebug();
     avLogSetEnabled(false);
 
+
     QGuiApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 
-    QApplication a(argc, argv);
+    QApplication application(argc, argv);
+
+    net_ctrl->createInstance();
+
+    if(!net_ctrl->listen()) {
+        if(application.arguments().contains(QStringLiteral("--play-pause")))
+            net_ctrl->send(NetCtrl::KeyCode::PlayPause);
+
+        else if(application.arguments().contains(QStringLiteral("--pause")))
+            net_ctrl->send(NetCtrl::KeyCode::PlayPause);
+
+        else if(application.arguments().contains(QStringLiteral("--next")))
+            net_ctrl->send(NetCtrl::KeyCode::Next);
+
+        else if(application.arguments().contains(QStringLiteral("--prev")))
+            net_ctrl->send(NetCtrl::KeyCode::Prev);
+
+        exit(0);
+    }
 
     settings->createInstance();
 
@@ -42,5 +62,8 @@ int main(int argc, char *argv[])
     MainWindow w;
     w.show();
 
-    return a.exec();
+    if(application.arguments().contains(QStringLiteral("--play-pause")) || application.arguments().contains(QStringLiteral("--pause")))
+        w.playPause();
+
+    return application.exec();
 }

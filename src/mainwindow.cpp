@@ -35,6 +35,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "audio_output.h"
 #include "progress.h"
 #include "menu_bar.h"
+#include "net_ctrl.h"
 #include "settings.h"
 #include "settings_view.h"
 
@@ -76,6 +77,10 @@ MainWindow::MainWindow(QWidget *parent)
     connect(audio_output, SIGNAL(stopped()), playlist_view, SLOT(markVoid()));
 
     connect(filelist_view, SIGNAL(updatePlaylist(QStringList,bool)), playlist_view, SLOT(updatePlaylist(QStringList,bool)));
+
+    connect(net_ctrl, SIGNAL(playPause()), SLOT(playPause()));
+    connect(net_ctrl, SIGNAL(next()), playlist_view, SLOT(next()));
+    connect(net_ctrl, SIGNAL(prev()), playlist_view, SLOT(prev()));
 
 
     const QSize button_size(42, 24);
