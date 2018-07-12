@@ -32,7 +32,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "filelist_view.h"
 #include "playlist_view.h"
 #include "ff_tools.h"
-#include "audio_output.h"
+#include "audio_output_thread.h"
 #include "progress.h"
 #include "menu_bar.h"
 #include "net_ctrl.h"
@@ -44,6 +44,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
+    qRegisterMetaType<FFDecStats>("FFDecStats");
+
     setAcceptDrops(true);
 
     connect(settings, SIGNAL(updated()), SLOT(applySettings()));
@@ -56,7 +58,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(menu_bar, SIGNAL(showSettings()), settings_view, SLOT(exec()));
 
-    audio_output=new AudioOutput();
+    audio_output=new AudioOutputThread(this);
     connect(audio_output, SIGNAL(durationChanged(qint64)), SLOT(onDurationChanged(qint64)));
     connect(audio_output, SIGNAL(posChanged(qint64)), SLOT(onPosChanged(qint64)));
     connect(audio_output, SIGNAL(statsChanged(FFDecStats)), SLOT(updateStatus(FFDecStats)));
@@ -64,7 +66,7 @@ MainWindow::MainWindow(QWidget *parent)
     filelist_view=new FilelistView();
 
     playlist_view=new PlaylistView();
-    connect(playlist_view, SIGNAL(playRequest(QString)), audio_output, SLOT(setFile(QString)));
+    connect(playlist_view, SIGNAL(playRequest(QString)), audio_output, SIGNAL(setFile(QString)));
     connect(playlist_view, SIGNAL(playRequest(QString)), SLOT(onPlayRequest(QString)));
     connect(playlist_view, SIGNAL(currentIndexRemoved()), SLOT(stop()));
     connect(menu_bar, SIGNAL(cursorFollowsPlayback(bool)), playlist_view, SLOT(setCursorFollowsPlayback(bool)));
@@ -111,12 +113,12 @@ MainWindow::MainWindow(QWidget *parent)
     volume_level=new Progress(true);
     volume_level->setRange(0, 1000);
     volume_level->setValue(settings->main.volume_level);
-    connect(volume_level, SIGNAL(posChanged32(int)), audio_output, SLOT(setVolume(int)));
+    connect(volume_level, SIGNAL(posChanged32(int)), audio_output, SIGNAL(setVolume(int)));
 
     audio_output->setVolume(settings->main.volume_level);
 
     progress=new Progress();
-    connect(progress, SIGNAL(posChanged(qint64)), audio_output, SLOT(seek(qint64)));
+    connect(progress, SIGNAL(posChanged(qint64)), audio_output, SIGNAL(seek(qint64)));
 
 
     setStatusBar(new QStatusBar());
@@ -262,8 +264,6 @@ void MainWindow::updateStatus(FFDecStats stats)
 
 void MainWindow::dragEnterEvent(QDragEnterEvent *event)
 {
-//    qInfo() << "dragEnterEvent";
-
     if(event->mimeData()->hasUrls())
         event->acceptProposedAction();
 

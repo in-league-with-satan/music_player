@@ -27,7 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 class FilelistView;
 class PlaylistView;
-class AudioOutput;
+class AudioOutputThread;
 class Progress;
 
 class MainWindow : public QMainWindow
@@ -65,7 +65,7 @@ private:
     FilelistView *filelist_view;
     PlaylistView *playlist_view;
 
-    AudioOutput *audio_output;
+    AudioOutputThread *audio_output;
 
     Progress *volume_level;
     Progress *progress;
