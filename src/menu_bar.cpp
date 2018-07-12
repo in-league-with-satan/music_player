@@ -41,6 +41,14 @@ MenuBar::MenuBar(QWidget *parent)
     connect(action, SIGNAL(triggered(bool)), SLOT(showLibraryChanged(bool)));
     connect(action, SIGNAL(triggered(bool)), SIGNAL(showLibrary(bool)));
 
+    action=menu_view->addAction("cursor follows playback");
+    // action->setShortcut(QKeySequence::fromString("ctrl+f"));
+    action->setCheckable(true);
+    action->setChecked(settings->main.cursor_follows_playback);
+    connect(action, SIGNAL(triggered(bool)), SLOT(cursorFollowsPlaybackChanged(bool)));
+    connect(action, SIGNAL(triggered(bool)), SIGNAL(cursorFollowsPlayback(bool)));
+
+
     addMenu(menu_edit);
     addMenu(menu_view);
 }
@@ -52,4 +60,9 @@ MenuBar::~MenuBar()
 void MenuBar::showLibraryChanged(bool state)
 {
     settings->main.show_library=state;
+}
+
+void MenuBar::cursorFollowsPlaybackChanged(bool state)
+{
+    settings->main.cursor_follows_playback=state;
 }

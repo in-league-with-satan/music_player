@@ -46,6 +46,7 @@ enum {
 PlaylistView::PlaylistView(QWidget *parent)
     : QWidget(parent)
     , current_index(0)
+    , cursor_follows_playback(true)
 {
     context_menu=new QMenu();
 
@@ -68,13 +69,13 @@ PlaylistView::PlaylistView(QWidget *parent)
     table->setSelectionBehavior(QAbstractItemView::SelectRows);
     table->setFocusPolicy(Qt::StrongFocus);
 
-    connect(table, SIGNAL(customContextMenuRequested(QPoint)), SLOT(menuRequested(QPoint)));
-    connect(table, SIGNAL(activated(QModelIndex)), SLOT(startPlaying(QModelIndex)));
-
-
     QPalette p=table->palette();
     p.setColor(QPalette::Inactive, QPalette::Highlight, p.color(QPalette::Active, QPalette::Highlight));
+    p.setColor(QPalette::Inactive, QPalette::HighlightedText, p.color(QPalette::Active, QPalette::HighlightedText));
     table->setPalette(p);
+
+    connect(table, SIGNAL(customContextMenuRequested(QPoint)), SLOT(menuRequested(QPoint)));
+    connect(table, SIGNAL(activated(QModelIndex)), SLOT(startPlaying(QModelIndex)));
 
     connect(table, SIGNAL(doubleClicked(QModelIndex)), SLOT(onDoubleClicked(QModelIndex)));
 
@@ -192,11 +193,6 @@ void PlaylistView::restorePlaylist(const QVariantList &pl)
         model->setItem(row_num, col_num_title, item_title);
         model->setItem(row_num, col_num_duration, item_duration);
         model->setItem(row_num, col_num_state, item_state);
-
-        for(int col=0; col<col_size; ++col) {
-            model->item(row_num, col)->setData(model->item(row_num, col)->data(RoleOrigBGColor), Qt::BackgroundRole);
-            model->item(row_num, col)->setData(model->item(row_num, col)->data(RoleOrigTextColor), Qt::TextColorRole);
-        }
     }
 }
 
@@ -216,8 +212,11 @@ void PlaylistView::setIndex(int index)
 
     const QModelIndex model_index=model->index(current_index, col_num_track);
 
-    table->scrollTo(model_index, QTableView::PositionAtCenter);
-    table->scrollTo(model_index, QTableView::PositionAtCenter); // dirty hack? X_x
+    if(cursor_follows_playback) {
+        table->selectRow(index);
+        table->scrollTo(model_index, QTableView::PositionAtCenter);
+        table->scrollTo(model_index, QTableView::PositionAtCenter); // dirty hack? X_x
+    }
 
     if(table->selectionModel()->selectedRows().isEmpty())
         table->selectRow(index);
@@ -279,11 +278,6 @@ void PlaylistView::updatePlaylist(const QStringList &list, bool drop_prev)
         model->setItem(row_num, col_num_title, item_title);
         model->setItem(row_num, col_num_duration, item_duration);
         model->setItem(row_num, col_num_state, item_state);
-
-        for(int col=0; col<col_size; ++col) {
-            model->item(row_num, col)->setData(model->item(row_num, col)->data(RoleOrigBGColor), Qt::BackgroundRole);
-            model->item(row_num, col)->setData(model->item(row_num, col)->data(RoleOrigTextColor), Qt::TextColorRole);
-        }
     }
 
     if(drop_prev)
@@ -354,7 +348,10 @@ void PlaylistView::mark(PlaylistView::Mark::T type)
 
             markRow(i, true);
 
-            table->scrollTo(item->index());
+            if(cursor_follows_playback) {
+                table->selectRow(i);
+                table->scrollTo(item->index());
+            }
 
         } else if(item->data(RoleMarker).toBool()) {
             if("err"==item->data(Qt::DisplayRole).toString())
@@ -387,6 +384,11 @@ void PlaylistView::markVoid()
     mark(Mark::Void);
 }
 
+void PlaylistView::setCursorFollowsPlayback(bool state)
+{
+    cursor_follows_playback=state;
+}
+
 void PlaylistView::onDoubleClicked(const QModelIndex &index)
 {
     if(!index.isValid())
@@ -413,19 +415,6 @@ void PlaylistView::markRow(int index, bool state)
         return;
 
     model->item(index, col_num_state)->setData(state, RoleMarker);
-
-    if(state) {
-        for(int col=0; col<col_size; ++col) {
-            model->item(index, col)->setData(QVariant(QColor(Qt::black)), Qt::BackgroundRole);
-            model->item(index, col)->setData(QVariant(QColor(Qt::white)), Qt::TextColorRole);
-        }
-
-    } else {
-        for(int col=0; col<col_size; ++col) {
-            model->item(index, col)->setData(model->item(index, col)->data(RoleOrigBGColor), Qt::BackgroundRole);
-            model->item(index, col)->setData(model->item(index, col)->data(RoleOrigTextColor), Qt::TextColorRole);
-        }
-    }
 }
 
 void PlaylistView::menuRequested(const QPoint &pos)

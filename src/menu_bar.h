@@ -32,10 +32,12 @@ public:
 
 private slots:
     void showLibraryChanged(bool state);
+    void cursorFollowsPlaybackChanged(bool state);
 
 signals:
     void showSettings();
     void showLibrary(bool state);
+    void cursorFollowsPlayback(bool state);
 };
 
 #endif // MENU_BAR_H

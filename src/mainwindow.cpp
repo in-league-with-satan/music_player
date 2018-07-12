@@ -67,7 +67,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(playlist_view, SIGNAL(playRequest(QString)), audio_output, SLOT(setFile(QString)));
     connect(playlist_view, SIGNAL(playRequest(QString)), SLOT(onPlayRequest(QString)));
     connect(playlist_view, SIGNAL(currentIndexRemoved()), SLOT(stop()));
-
+    connect(menu_bar, SIGNAL(cursorFollowsPlayback(bool)), playlist_view, SLOT(setCursorFollowsPlayback(bool)));
 
     connect(audio_output, SIGNAL(streamEnded()), playlist_view, SLOT(next()), Qt::QueuedConnection);
     connect(audio_output, SIGNAL(openError()), playlist_view, SLOT(markError()));
@@ -229,6 +229,8 @@ void MainWindow::applySettings()
     filelist_view->setNameFilters(filter);
 
     filelist_view->filterEmptyDirs(settings->main.filter_empty_dirs);
+
+    playlist_view->setCursorFollowsPlayback(settings->main.cursor_follows_playback);
 }
 
 void MainWindow::onDurationChanged(qint64 duration)

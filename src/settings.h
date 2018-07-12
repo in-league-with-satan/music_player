@@ -49,6 +49,7 @@ public:
         bool filter_empty_dirs;
         bool show_library;
         int volume_level;
+        bool cursor_follows_playback;
 
     } main;
 

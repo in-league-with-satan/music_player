@@ -86,6 +86,7 @@ bool Settings::load()
     main.playlist_index=map_main.value(QStringLiteral("playlist_index"), 0).toInt();
     main.show_library=map_main.value(QStringLiteral("show_library"), true).toBool();
     main.volume_level=map_main.value(QStringLiteral("volume_level"), 1000).toInt();
+    main.cursor_follows_playback=map_main.value(QStringLiteral("cursor_follows_playback"), true).toBool();
 
     return file_readed;
 }
@@ -105,6 +106,7 @@ bool Settings::save()
     map_main.insert(QStringLiteral("playlist_index"), main.playlist_index);
     map_main.insert(QStringLiteral("show_library"), main.show_library);
     map_main.insert(QStringLiteral("volume_level"), main.volume_level);
+    map_main.insert(QStringLiteral("cursor_follows_playback"), main.cursor_follows_playback);
 
     map_root.insert(QStringLiteral("main"), map_main);
 

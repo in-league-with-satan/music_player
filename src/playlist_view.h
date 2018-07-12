@@ -68,6 +68,8 @@ public slots:
     void markPause();
     void markVoid();
 
+    void setCursorFollowsPlayback(bool state);
+
 private slots:
     void onDoubleClicked(const QModelIndex &index);
     void menuRequested(const QPoint &pos);
@@ -81,9 +83,7 @@ private:
 
     enum {
         RoleFilepath=Qt::UserRole + 1,
-        RoleMarker,
-        RoleOrigBGColor,
-        RoleOrigTextColor
+        RoleMarker
     };
 
     QTableView *table;
@@ -92,6 +92,8 @@ private:
     QMenu *context_menu;
 
     int current_index;
+
+    bool cursor_follows_playback;
 
 signals:
     void playRequest(const QString &filename);
