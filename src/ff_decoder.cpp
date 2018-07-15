@@ -36,6 +36,7 @@ public:
     AVPacket packet;
     int64_t duration=0;
     int64_t pos=0;
+    bool ended=false;
 
     class Bitrate {
         std::list <uint64_t> accum;
@@ -256,6 +257,7 @@ void FFDecoder::close()
 
     context->duration=0;
     context->pos=0;
+    context->ended=false;
 
     stats.last_update_time=0;
 }
@@ -273,8 +275,6 @@ int64_t FFDecoder::duration() const
 QByteArray FFDecoder::read()
 {
     QByteArray ba;
-
-    bool ended=false;
 
     while(true) {
         if(!context->format_context)
@@ -345,12 +345,12 @@ QByteArray FFDecoder::read()
             }
 
         } else {
-            if(!ended) {
+            if(!context->ended) {
                 qInfo() << "FFDecoder::read: stream ended";
                 emit streamEnded();
             }
 
-            ended=true;
+            context->ended=true;
             break;
             qApp->processEvents();
         }

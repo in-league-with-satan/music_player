@@ -71,7 +71,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(playlist_view, SIGNAL(currentIndexRemoved()), SLOT(stop()));
     connect(menu_bar, SIGNAL(cursorFollowsPlayback(bool)), playlist_view, SLOT(setCursorFollowsPlayback(bool)));
 
-    connect(audio_output, SIGNAL(streamEnded()), playlist_view, SLOT(next()), Qt::QueuedConnection);
+    connect(audio_output, SIGNAL(streamEnded()), playlist_view, SLOT(next()));
     connect(audio_output, SIGNAL(openError()), playlist_view, SLOT(markError()));
     connect(audio_output, SIGNAL(openOk()), playlist_view, SLOT(markPlay()));
     connect(audio_output, SIGNAL(startPlaying()), playlist_view, SLOT(markPlay()));
