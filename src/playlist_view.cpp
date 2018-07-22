@@ -77,8 +77,6 @@ PlaylistView::PlaylistView(QWidget *parent)
     connect(table, SIGNAL(customContextMenuRequested(QPoint)), SLOT(menuRequested(QPoint)));
     connect(table, SIGNAL(activated(QModelIndex)), SLOT(startPlaying(QModelIndex)));
 
-    connect(table, SIGNAL(doubleClicked(QModelIndex)), SLOT(onDoubleClicked(QModelIndex)));
-
     QVBoxLayout *la_main=new QVBoxLayout();
     la_main->addWidget(table);
     la_main->setSpacing(0);
@@ -129,15 +127,19 @@ QVariantList PlaylistView::savePlaylist()
 
     QVariantMap item;
 
+    TrackMetadata md;
+
     for(int row=0; row<model->rowCount(); ++row) {
-        item.insert("filepath", model->item(row, col_num_title)->data(QFileSystemModel::FilePathRole));
-        item.insert("title", model->item(row, col_num_title)->data(Qt::DisplayRole));
-        item.insert("tracknumber", model->item(row, col_num_track)->data(Qt::DisplayRole));
-        item.insert("date", model->item(row, col_num_date)->data(Qt::DisplayRole));
-        item.insert("artist", model->item(row, col_num_artist)->data(Qt::DisplayRole));
-        item.insert("album", model->item(row, col_num_album)->data(Qt::DisplayRole));
-        item.insert("title", model->item(row, col_num_title)->data(Qt::DisplayRole));
-        item.insert("duration", model->item(row, col_num_duration)->data(Qt::DisplayRole));
+        md.fromVariant(model->item(row, col_num_track)->data(RoleMetadata));
+
+        item.insert("filepath", md.filepath);
+        item.insert("title", md.title);
+        item.insert("track_number", md.track_number);
+        item.insert("date", md.date);
+        item.insert("artist", md.artist);
+        item.insert("album", md.album);
+        item.insert("title", md.title);
+        item.insert("duration", md.track_length);
 
         list.append(item);
     }
@@ -145,54 +147,72 @@ QVariantList PlaylistView::savePlaylist()
     return list;
 }
 
+void PlaylistView::appendRow(TrackMetadata &md)
+{
+    const int row_num=model->rowCount();
+
+    model->appendRow(nullptr);
+
+    QStandardItem *item_tracknumber=new QStandardItem(md.track_number);
+    item_tracknumber->setFlags(item_tracknumber->flags()^Qt::ItemIsEditable);
+    item_tracknumber->setTextAlignment(Qt::AlignCenter);
+    item_tracknumber->setData(md.filepath, Qt::ToolTipRole);
+    item_tracknumber->setData(md.toVariant(), RoleMetadata);
+
+    QStandardItem *item_date=new QStandardItem(md.date);
+    item_date->setFlags(item_date->flags()^Qt::ItemIsEditable);
+    item_date->setTextAlignment(Qt::AlignCenter);
+
+    QStandardItem *item_artist=new QStandardItem(md.artist);
+    item_artist->setFlags(item_artist->flags()^Qt::ItemIsEditable);
+    item_artist->setData(md.artist, Qt::ToolTipRole);
+
+    QStandardItem *item_album=new QStandardItem(md.album);
+    item_album->setFlags(item_album->flags()^Qt::ItemIsEditable);
+    item_album->setData(md.album, Qt::ToolTipRole);
+
+    QStandardItem *item_title=new QStandardItem(md.title);
+    item_title->setFlags(item_title->flags()^Qt::ItemIsEditable);
+    item_title->setData(md.filepath, QFileSystemModel::FilePathRole);
+    item_title->setData(md.title, Qt::ToolTipRole);
+
+    QStandardItem *item_duration=new QStandardItem(timeToStringSec(md.track_length));
+    item_duration->setFlags(item_duration->flags()^Qt::ItemIsEditable);
+    item_duration->setTextAlignment(Qt::AlignCenter);
+
+    QStandardItem *item_state=new QStandardItem();
+    item_state->setFlags(item_state->flags()^Qt::ItemIsEditable);
+    item_state->setTextAlignment(Qt::AlignCenter);
+
+    model->setItem(row_num, col_num_track, item_tracknumber);
+    model->setItem(row_num, col_num_date, item_date);
+    model->setItem(row_num, col_num_artist, item_artist);
+    model->setItem(row_num, col_num_album, item_album);
+    model->setItem(row_num, col_num_title, item_title);
+    model->setItem(row_num, col_num_duration, item_duration);
+    model->setItem(row_num, col_num_state, item_state);
+
+}
+
 void PlaylistView::restorePlaylist(const QVariantList &pl)
 {
     model->removeRows(0, model->rowCount());
 
+    TrackMetadata md;
+
     foreach(const QVariant &var, pl) {
         const QVariantMap &item=var.toMap();
 
-        const int row_num=model->rowCount();
+        md.title=item.value("title").toString();
+        md.artist=item.value("artist").toString();
+        md.album=item.value("album").toString();
+        md.track_number=item.value("track_number").toString();
+        md.date=item.value("date").toString();
+        md.filepath=item.value("filepath").toString();
+        md.track_length=item.value("duration").toLongLong();
+        md.start_playing_time=-1;
 
-        model->appendRow(0);
-
-        QStandardItem *item_tracknumber=new QStandardItem(item.value("tracknumber").toString());
-        item_tracknumber->setFlags(item_tracknumber->flags()^Qt::ItemIsEditable);
-        item_tracknumber->setTextAlignment(Qt::AlignCenter);
-        item_tracknumber->setData(item.value("filepath"), Qt::ToolTipRole);
-
-        QStandardItem *item_date=new QStandardItem(item.value("date").toString());
-        item_date->setFlags(item_date->flags()^Qt::ItemIsEditable);
-        item_date->setTextAlignment(Qt::AlignCenter);
-
-        QStandardItem *item_artist=new QStandardItem(item.value("artist").toString());
-        item_artist->setFlags(item_artist->flags()^Qt::ItemIsEditable);
-        item_artist->setData(item.value("artist"), Qt::ToolTipRole);
-
-        QStandardItem *item_album=new QStandardItem(item.value("album").toString());
-        item_album->setFlags(item_album->flags()^Qt::ItemIsEditable);
-        item_album->setData(item.value("album"), Qt::ToolTipRole);
-
-        QStandardItem *item_title=new QStandardItem(item.value("title").toString());
-        item_title->setFlags(item_title->flags()^Qt::ItemIsEditable);
-        item_title->setData(item.value("filepath"), QFileSystemModel::FilePathRole);
-        item_title->setData(item.value("title"), Qt::ToolTipRole);
-
-        QStandardItem *item_duration=new QStandardItem(item.value("duration").toString());
-        item_duration->setFlags(item_duration->flags()^Qt::ItemIsEditable);
-        item_duration->setTextAlignment(Qt::AlignCenter);
-
-        QStandardItem *item_state=new QStandardItem();
-        item_state->setFlags(item_state->flags()^Qt::ItemIsEditable);
-        item_state->setTextAlignment(Qt::AlignCenter);
-
-        model->setItem(row_num, col_num_track, item_tracknumber);
-        model->setItem(row_num, col_num_date, item_date);
-        model->setItem(row_num, col_num_artist, item_artist);
-        model->setItem(row_num, col_num_album, item_album);
-        model->setItem(row_num, col_num_title, item_title);
-        model->setItem(row_num, col_num_duration, item_duration);
-        model->setItem(row_num, col_num_state, item_state);
+        appendRow(md);
     }
 }
 
@@ -229,55 +249,17 @@ void PlaylistView::updatePlaylist(const QStringList &list, bool drop_prev)
         current_index=0;
     }
 
+    TrackMetadata md;
+
     foreach(const QString &filepath, list) {
-        const int row_num=model->rowCount();
-
-        model->appendRow(0);
-
         QFileInfo fi(filepath);
 
-        TagsReader::Tags t=TagsReader::get(filepath);
+        md=readMetadata(filepath);
 
-        if(t.title.isEmpty())
-            t.title=fi.fileName();
+        if(md.title.isEmpty())
+            md.title=fi.fileName();
 
-        QStandardItem *item_tracknumber=new QStandardItem(t.tracknumber);
-        item_tracknumber->setFlags(item_tracknumber->flags()^Qt::ItemIsEditable);
-        item_tracknumber->setTextAlignment(Qt::AlignCenter);
-        item_tracknumber->setData(filepath, Qt::ToolTipRole);
-
-        QStandardItem *item_date=new QStandardItem(t.date);
-        item_date->setFlags(item_date->flags()^Qt::ItemIsEditable);
-        item_date->setTextAlignment(Qt::AlignCenter);
-
-        QStandardItem *item_artist=new QStandardItem(t.artist);
-        item_artist->setFlags(item_artist->flags()^Qt::ItemIsEditable);
-        item_artist->setData(t.artist, Qt::ToolTipRole);
-
-        QStandardItem *item_album=new QStandardItem(t.album);
-        item_album->setFlags(item_album->flags()^Qt::ItemIsEditable);
-        item_album->setData(t.album, Qt::ToolTipRole);
-
-        QStandardItem *item_title=new QStandardItem(t.title);
-        item_title->setFlags(item_title->flags()^Qt::ItemIsEditable);
-        item_title->setData(filepath, QFileSystemModel::FilePathRole);
-        item_title->setData(t.title, Qt::ToolTipRole);
-
-        QStandardItem *item_duration=new QStandardItem(t.duration);
-        item_duration->setFlags(item_duration->flags()^Qt::ItemIsEditable);
-        item_duration->setTextAlignment(Qt::AlignCenter);
-
-        QStandardItem *item_state=new QStandardItem();
-        item_state->setFlags(item_state->flags()^Qt::ItemIsEditable);
-        item_state->setTextAlignment(Qt::AlignCenter);
-
-        model->setItem(row_num, col_num_track, item_tracknumber);
-        model->setItem(row_num, col_num_date, item_date);
-        model->setItem(row_num, col_num_artist, item_artist);
-        model->setItem(row_num, col_num_album, item_album);
-        model->setItem(row_num, col_num_title, item_title);
-        model->setItem(row_num, col_num_duration, item_duration);
-        model->setItem(row_num, col_num_state, item_state);
+        appendRow(md);
     }
 
     if(drop_prev)
@@ -371,7 +353,16 @@ void PlaylistView::markError()
 
 void PlaylistView::markPlay()
 {
+    // qDebug() << "PlaylistView::markPlay";
+
     mark(Mark::Play);
+
+    QModelIndex index=model->index(current_index, col_num_track);
+
+    if(!index.isValid())
+        return;
+
+    emit nowPlaying(TrackMetadata().fromVariant(index.data(RoleMetadata)));
 }
 
 void PlaylistView::markPause()
@@ -387,16 +378,6 @@ void PlaylistView::markVoid()
 void PlaylistView::setCursorFollowsPlayback(bool state)
 {
     cursor_follows_playback=state;
-}
-
-void PlaylistView::onDoubleClicked(const QModelIndex &index)
-{
-    if(!index.isValid())
-        return;
-
-    current_index=index.row();
-
-    makePlayRequest();
 }
 
 void PlaylistView::makePlayRequest()

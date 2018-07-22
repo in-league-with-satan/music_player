@@ -17,28 +17,35 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 ******************************************************************************/
 
-#ifndef FF_TOOLS_H
-#define FF_TOOLS_H
+#ifndef TRACK_METADATA_H
+#define TRACK_METADATA_H
 
 #include <QString>
+#include <QList>
 
-extern "C" {
-#include <libavformat/avformat.h>
-#include <libavutil/opt.h>
-#include <libavutil/time.h>
-#include <libswresample/swresample.h>
-}
+struct TrackMetadata
+{
+    QString title;
+    QString artist;
+    QString album;
+    QString track_number;
+    QString date;
+    QString filepath;
+    qint64 track_length=-1;
+    qint64 start_playing_time=-1;
 
-#include "track_metadata.h"
+    inline QVariant toVariant() {
+        return QVariant::fromValue(*this);
+    }
 
-void avLogToQDebug();
-void avLogSetEnabled(bool state);
+    inline TrackMetadata fromVariant(const QVariant &var) {
+        return (*this)=var.value<TrackMetadata>();
+    }
+};
 
-QString ffErrorString(int code);
+typedef QList <TrackMetadata> TrackMetadataList;
 
-QString timeToStringSec(int64_t t);
-QString timeToStringMSec(int64_t t);
+Q_DECLARE_METATYPE(TrackMetadata);
+Q_DECLARE_METATYPE(TrackMetadataList);
 
-TrackMetadata readMetadata(const QString &filename);
-
-#endif // FF_TOOLS_H
+#endif // TRACK_METADATA_H

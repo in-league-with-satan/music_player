@@ -3,7 +3,8 @@ QT += \
     gui \
     widgets \
     multimedia \
-    network
+    network \
+    sql
 
 TARGET = music_player
 TEMPLATE = app
@@ -23,6 +24,7 @@ CONFIG(debug, debug|release):{
     BUILD_OPT=debug
 
 }
+
 
 OBJECTS_DIR = $$BUILD_OPT/$$QT_VERSION-$$LINK_OPT/obj
 MOC_DIR     = $$BUILD_OPT/$$QT_VERSION-$$LINK_OPT/moc

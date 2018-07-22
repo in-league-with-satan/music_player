@@ -73,6 +73,7 @@ void AudioOutputThread::run()
 
     connect(audio_output, SIGNAL(posChanged(qint64)),       SIGNAL(posChanged(qint64)), Qt::QueuedConnection);
     connect(audio_output, SIGNAL(durationChanged(qint64)),  SIGNAL(durationChanged(qint64)), Qt::QueuedConnection);
+    connect(audio_output, SIGNAL(playtimeChanged(qint64)),  SIGNAL(playtimeChanged(qint64)), Qt::QueuedConnection);
     connect(audio_output, SIGNAL(statsChanged(FFDecStats)), SIGNAL(statsChanged(FFDecStats)), Qt::QueuedConnection);
     connect(audio_output, SIGNAL(streamEnded()),            SIGNAL(streamEnded()), Qt::QueuedConnection);
     connect(audio_output, SIGNAL(openError()),              SIGNAL(openError()), Qt::QueuedConnection);

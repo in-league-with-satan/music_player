@@ -29,6 +29,7 @@ class FilelistView;
 class PlaylistView;
 class AudioOutputThread;
 class Progress;
+class LastfmCtrl;
 
 class MainWindow : public QMainWindow
 {
@@ -66,6 +67,8 @@ private:
     PlaylistView *playlist_view;
 
     AudioOutputThread *audio_output;
+
+    LastfmCtrl *lastfm;
 
     Progress *volume_level;
     Progress *progress;

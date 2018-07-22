@@ -36,6 +36,7 @@ public:
     AVPacket packet;
     int64_t duration=0;
     int64_t pos=0;
+    int64_t playtime=0;
     bool ended=false;
 
     class Bitrate {
@@ -67,7 +68,7 @@ public:
             if(accum.empty())
                 return 0;
 
-            return std::accumulate(accum.begin(), accum.end(), 0.)/(double)accum.size();
+            return std::accumulate(accum.begin(), accum.end(), 0)/double(accum.size());
         }
 
     } bitrate;
@@ -103,10 +104,10 @@ bool FFDecoder::open(const QString &filename)
     int ret;
 
 
-    ret=avformat_open_input(&context->format_context, filename.toUtf8().data(), 0, 0);
+    ret=avformat_open_input(&context->format_context, filename.toUtf8().data(), nullptr, nullptr);
 
     if(ret<0) {
-        qWarning() << "FFDecoder::open: avformat_open_input err" << ffErrorString(ret);
+        qCritical() << "FFDecoder::open: avformat_open_input err" << ffErrorString(ret);
         goto error_exit;
     }
 
@@ -257,6 +258,7 @@ void FFDecoder::close()
 
     context->duration=0;
     context->pos=0;
+    context->playtime=0;
     context->ended=false;
 
     stats.last_update_time=0;
@@ -272,6 +274,11 @@ int64_t FFDecoder::duration() const
     return context->duration;
 }
 
+int64_t FFDecoder::playtime() const
+{
+    return int64_t(context->playtime*.001);
+}
+
 QByteArray FFDecoder::read()
 {
     QByteArray ba;
@@ -283,8 +290,11 @@ QByteArray FFDecoder::read()
         if(av_read_frame(context->format_context, &context->packet)>=0) {
             if(context->packet.stream_index==context->stream->index) {
                 if(avcodec_send_packet(context->codec_context, &context->packet)==0) {
-                    double packet_bitrate=context->packet.size*(1000/(av_q2d(context->stream->time_base)*context->packet.duration*1000))*8;
+                    uint64_t packet_bitrate=uint64_t(context->packet.size*(1000/(av_q2d(context->stream->time_base)*context->packet.duration*1000))*8);
                     context->bitrate.push(packet_bitrate);
+
+                    if(context->packet.duration!=0)
+                        context->playtime+=context->packet.duration*av_q2d(context->stream->time_base)*1000;
 
                     if(av_gettime() - stats.last_update_time>=1000*1000) {
                         stats.pos=context->pos;
@@ -346,7 +356,7 @@ QByteArray FFDecoder::read()
 
         } else {
             if(!context->ended) {
-                qInfo() << "FFDecoder::read: stream ended";
+                // qInfo() << "FFDecoder::read: stream ended";
                 emit streamEnded();
             }
 

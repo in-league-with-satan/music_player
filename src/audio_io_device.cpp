@@ -43,7 +43,7 @@ bool AudioIODevice::open(QIODevice::OpenMode mode)
 
 void AudioIODevice::close()
 {
-    qWarning() << "AudioIODevice::close";
+    // qWarning() << "AudioIODevice::close";
 }
 
 qint64 AudioIODevice::pos() const
@@ -70,7 +70,7 @@ bool AudioIODevice::atEnd() const
 
 bool AudioIODevice::reset()
 {
-    qWarning() << "AudioIODevice::reset";
+    // qWarning() << "AudioIODevice::reset";
 
     return true;
 }
@@ -93,7 +93,7 @@ void AudioIODevice::clear()
 
 bool AudioIODevice::canReadLine() const
 {
-    qWarning() << "AudioIODevice::canReadLine";
+    // qWarning() << "AudioIODevice::canReadLine";
 
     return false;
 }
@@ -126,12 +126,12 @@ qint64 AudioIODevice::readData(char *data, qint64 maxlen)
         maxlen=ba_data.size();
 
     if(maxlen>0) {
-        memcpy(data, ba_data.constData(), maxlen);
+        memcpy(data, ba_data.constData(), size_t(maxlen));
 
-        ba_data.remove(0, maxlen);
+        ba_data.remove(0, int(maxlen));
     }
 
-    qint64 pos=decoder->pos();
+    const qint64 pos=decoder->pos();
 
     if(last_audio_pos!=pos) {
         last_audio_pos=pos;
@@ -139,11 +139,22 @@ qint64 AudioIODevice::readData(char *data, qint64 maxlen)
         emit posChanged(pos);
     }
 
+    const qint64 playtime=decoder->playtime();
+
+    if(last_playtime!=playtime) {
+        last_playtime=playtime;
+
+        emit playtimeChanged(playtime);
+    }
+
     return maxlen;
 }
 
 qint64 AudioIODevice::writeData(const char *data, qint64 len)
 {
+    Q_UNUSED(data);
+    Q_UNUSED(len);
+
     return 0;
 }
 

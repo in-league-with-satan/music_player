@@ -35,6 +35,8 @@ public:
 public slots:
     virtual int exec();
 
+    void lastfmBadauth();
+
 private slots:
     void updateSettings();
 
@@ -43,6 +45,10 @@ private slots:
 private:
     QLineEdit *le_library_path;
     QLineEdit *le_file_filter;
+
+    QLineEdit *le_lastfm_login;
+    QLineEdit *le_lastfm_password;
+
     QCheckBox *cb_filter_empty_dirs;
 };
 

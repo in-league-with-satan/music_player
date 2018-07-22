@@ -24,6 +24,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <QTableView>
 #include <QStandardItemModel>
 
+#include "track_metadata.h"
+
 class QListView;
 class QStringListModel;
 class QMenu;
@@ -58,7 +60,6 @@ public:
 
 public slots:
     void updatePlaylist(const QStringList &list, bool drop_prev);
-    void startPlaying(const QModelIndex &index);
     void next();
     void prev();
 
@@ -71,7 +72,7 @@ public slots:
     void setCursorFollowsPlayback(bool state);
 
 private slots:
-    void onDoubleClicked(const QModelIndex &index);
+    void startPlaying(const QModelIndex &index);
     void menuRequested(const QPoint &pos);
 
     void removeRows();
@@ -81,8 +82,11 @@ private:
 
     void markRow(int index, bool state);
 
+    void appendRow(TrackMetadata &tmd);
+
     enum {
         RoleFilepath=Qt::UserRole + 1,
+        RoleMetadata,
         RoleMarker
     };
 
@@ -98,6 +102,8 @@ private:
 signals:
     void playRequest(const QString &filename);
     void currentIndexRemoved();
+
+    void nowPlaying(TrackMetadata tmd);
 };
 
 #endif // PLAYLIST_VIEW_H

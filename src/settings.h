@@ -53,6 +53,14 @@ public:
 
     } main;
 
+    struct Lastfm {
+        bool enabled;
+        bool online;
+        QString login;
+        QString password;
+
+    } lastfm;
+
 
 private:
     Settings(QObject *parent=0);

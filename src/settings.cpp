@@ -75,6 +75,7 @@ bool Settings::load()
     //
 
     QVariantMap map_main=map_root.value(QStringLiteral("main")).toMap();
+    QVariantMap map_lastfm=map_root.value(QStringLiteral("lastfm")).toMap();
 
     main.library_path=map_main.value(QStringLiteral("library_path"), QDir::homePath() + "/Music").toString();
     main.file_filter=map_main.value(QStringLiteral("file_filter"), "opus;ogg;mp3;flac;ape;aac;").toString();
@@ -88,6 +89,11 @@ bool Settings::load()
     main.volume_level=map_main.value(QStringLiteral("volume_level"), 1000).toInt();
     main.cursor_follows_playback=map_main.value(QStringLiteral("cursor_follows_playback"), true).toBool();
 
+    lastfm.enabled=map_lastfm.value(QStringLiteral("enabled"), true).toBool();
+    lastfm.online=map_lastfm.value(QStringLiteral("online"), true).toBool();
+    lastfm.login=map_lastfm.value(QStringLiteral("login")).toString();
+    lastfm.password=map_lastfm.value(QStringLiteral("password")).toString();
+
     return file_readed;
 }
 
@@ -95,6 +101,7 @@ bool Settings::save()
 {
     QVariantMap map_root;
     QVariantMap map_main;
+    QVariantMap map_lastfm;
 
     map_main.insert(QStringLiteral("library_path"), main.library_path);
     map_main.insert(QStringLiteral("file_filter"), main.file_filter);
@@ -108,7 +115,13 @@ bool Settings::save()
     map_main.insert(QStringLiteral("volume_level"), main.volume_level);
     map_main.insert(QStringLiteral("cursor_follows_playback"), main.cursor_follows_playback);
 
+    map_lastfm.insert(QStringLiteral("enabled"), lastfm.enabled);
+    map_lastfm.insert(QStringLiteral("online"), lastfm.online);
+    map_lastfm.insert(QStringLiteral("login"), lastfm.login);
+    map_lastfm.insert(QStringLiteral("password"), lastfm.password);
+
     map_root.insert(QStringLiteral("main"), map_main);
+    map_root.insert(QStringLiteral("lastfm"), map_lastfm);
 
     QByteArray ba=QJsonDocument::fromVariant(map_root).toJson();
 

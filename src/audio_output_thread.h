@@ -47,8 +47,9 @@ private:
 
 signals:
     void posChanged(qint64 pos);
-    void durationChanged(qint64 duration);
-    void statsChanged(FFDecStats stats);
+    void durationChanged(qint64);
+    void playtimeChanged(qint64);
+    void statsChanged(FFDecStats);
 
     void streamEnded();
     void openError();

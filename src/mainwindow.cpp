@@ -38,6 +38,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "net_ctrl.h"
 #include "settings.h"
 #include "settings_view.h"
+#include "lastfm_ctrl.h"
 
 #include "mainwindow.h"
 
@@ -45,23 +46,33 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
     qRegisterMetaType<FFDecStats>("FFDecStats");
+    qRegisterMetaType<TrackMetadata>("TrackMetadata");
 
     setAcceptDrops(true);
 
     connect(settings, SIGNAL(updated()), SLOT(applySettings()));
 
+    lastfm=new LastfmCtrl();
+
     MenuBar *menu_bar=new MenuBar();
+
+    connect(menu_bar, SIGNAL(lastfmEnabled(bool)), lastfm, SIGNAL(setEnabled(bool)));
+    connect(menu_bar, SIGNAL(lastfmOnline(bool)), lastfm, SIGNAL(setOnline(bool)));
+    connect(lastfm, SIGNAL(cacheSize(qint64)), menu_bar, SLOT(setLastfmCacheSize(qint64)));
+    connect(lastfm, SIGNAL(badauth()), menu_bar, SLOT(lastfmBadauth()));
 
     setMenuBar(menu_bar);
 
     settings_view=new SettingsView();
 
     connect(menu_bar, SIGNAL(showSettings()), settings_view, SLOT(exec()));
+    connect(lastfm, SIGNAL(badauth()), settings_view, SLOT(lastfmBadauth()));
 
     audio_output=new AudioOutputThread(this);
     connect(audio_output, SIGNAL(durationChanged(qint64)), SLOT(onDurationChanged(qint64)));
     connect(audio_output, SIGNAL(posChanged(qint64)), SLOT(onPosChanged(qint64)));
     connect(audio_output, SIGNAL(statsChanged(FFDecStats)), SLOT(updateStatus(FFDecStats)));
+    connect(audio_output, SIGNAL(playtimeChanged(qint64)), lastfm, SIGNAL(playtimeChanged(qint64)));
 
     filelist_view=new FilelistView();
 
@@ -69,6 +80,9 @@ MainWindow::MainWindow(QWidget *parent)
     connect(playlist_view, SIGNAL(playRequest(QString)), audio_output, SIGNAL(setFile(QString)));
     connect(playlist_view, SIGNAL(playRequest(QString)), SLOT(onPlayRequest(QString)));
     connect(playlist_view, SIGNAL(currentIndexRemoved()), SLOT(stop()));
+    connect(playlist_view, SIGNAL(currentIndexRemoved()), SLOT(stop()));
+    connect(playlist_view, SIGNAL(nowPlaying(TrackMetadata)), lastfm, SIGNAL(nowPlaying(TrackMetadata)));
+
     connect(menu_bar, SIGNAL(cursorFollowsPlayback(bool)), playlist_view, SLOT(setCursorFollowsPlayback(bool)));
 
     connect(audio_output, SIGNAL(streamEnded()), playlist_view, SLOT(next()));
@@ -233,6 +247,12 @@ void MainWindow::applySettings()
     filelist_view->filterEmptyDirs(settings->main.filter_empty_dirs);
 
     playlist_view->setCursorFollowsPlayback(settings->main.cursor_follows_playback);
+
+    //
+
+    lastfm->setEnabled(settings->lastfm.enabled);
+    lastfm->setOnline(settings->lastfm.online);
+    lastfm->setup(settings->lastfm.login, settings->lastfm.password);
 }
 
 void MainWindow::onDurationChanged(qint64 duration)

@@ -56,13 +56,15 @@ private:
     FFDecoder *decoder;
 
     qint64 last_audio_pos;
+    qint64 last_playtime;
 
 protected:
     virtual qint64 readData(char *data, qint64 maxlen);
     virtual qint64 writeData(const char *data, qint64 len);
 
 signals:
-    void posChanged(qint64 pos);
+    void posChanged(qint64);
+    void playtimeChanged(qint64);
 };
 
 #endif // AUDIO_IO_DEVICE_H

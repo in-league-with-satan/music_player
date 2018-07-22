@@ -48,13 +48,40 @@ MenuBar::MenuBar(QWidget *parent)
     connect(action, SIGNAL(triggered(bool)), SLOT(cursorFollowsPlaybackChanged(bool)));
     connect(action, SIGNAL(triggered(bool)), SIGNAL(cursorFollowsPlayback(bool)));
 
+    QMenu *menu_lastfm=new QMenu("last.fm");
+
+    action=menu_lastfm->addAction("enabled");
+    action->setCheckable(true);
+    action->setChecked(settings->lastfm.enabled);
+    connect(action, SIGNAL(triggered(bool)), SLOT(lastfmEnabledChanged(bool)));
+    connect(action, SIGNAL(triggered(bool)), SIGNAL(lastfmEnabled(bool)));
+
+    a_lastfm_online=menu_lastfm->addAction("online");
+    a_lastfm_online->setCheckable(true);
+    a_lastfm_online->setChecked(settings->lastfm.online);
+    connect(a_lastfm_online, SIGNAL(triggered(bool)), SLOT(lastfmOnlineChanged(bool)));
+
+    a_lastfm_cache_size=menu_lastfm->addAction("cache size: 0");
+    a_lastfm_cache_size->setEnabled(false);
 
     addMenu(menu_edit);
     addMenu(menu_view);
+    addMenu(menu_lastfm);
 }
 
 MenuBar::~MenuBar()
 {
+}
+
+void MenuBar::lastfmBadauth()
+{
+    a_lastfm_online->setChecked(settings->lastfm.online=false);
+    emit lastfmOnline(false);
+}
+
+void MenuBar::setLastfmCacheSize(qint64 size)
+{
+    a_lastfm_cache_size->setText(QString("cache size: %1").arg(size));
 }
 
 void MenuBar::showLibraryChanged(bool state)
@@ -65,4 +92,22 @@ void MenuBar::showLibraryChanged(bool state)
 void MenuBar::cursorFollowsPlaybackChanged(bool state)
 {
     settings->main.cursor_follows_playback=state;
+}
+
+void MenuBar::lastfmEnabledChanged(bool state)
+{
+    settings->lastfm.enabled=state;
+}
+
+void MenuBar::lastfmOnlineChanged(bool state)
+{
+    if(state && (settings->lastfm.login.isEmpty() || settings->lastfm.password.isEmpty())) {
+        a_lastfm_online->setChecked(settings->lastfm.online=false);
+        emit lastfmOnline(false);
+        return;
+    }
+
+    settings->lastfm.online=state;
+
+    emit lastfmOnline(state);
 }

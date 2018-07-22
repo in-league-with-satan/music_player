@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <QLineEdit>
 #include <QCheckBox>
 #include <QFileDialog>
+#include <QGroupBox>
 #include <qcoreapplication.h>
 
 #include "settings.h"
@@ -49,22 +50,52 @@ SettingsView::SettingsView(QWidget *parent)
 
     cb_filter_empty_dirs=new QCheckBox("filter empty dirs");
 
-    QGridLayout *la_controls=new QGridLayout();
+    QGridLayout *la_basic_settings=new QGridLayout();
 
     int row=0;
 
-    la_controls->addWidget(l_library_path, row, 0);
-    la_controls->addWidget(le_library_path, row, 1);
-    la_controls->addWidget(b_select_dir, row, 2);
+    la_basic_settings->addWidget(l_library_path, row, 0);
+    la_basic_settings->addWidget(le_library_path, row, 1);
+    la_basic_settings->addWidget(b_select_dir, row, 2);
 
     row++;
 
-    la_controls->addWidget(l_file_filter, row, 0);
-    la_controls->addWidget(le_file_filter, row, 1);
+    la_basic_settings->addWidget(l_file_filter, row, 0);
+    la_basic_settings->addWidget(le_file_filter, row, 1);
 
     row++;
 
-    la_controls->addWidget(cb_filter_empty_dirs, row, 1);
+    la_basic_settings->addWidget(cb_filter_empty_dirs, row, 1);
+
+    QGroupBox *gb_basic_settings=new QGroupBox("basic settings");
+    gb_basic_settings->setLayout(la_basic_settings);
+
+    //
+
+
+    le_lastfm_login=new QLineEdit();
+    le_lastfm_password=new QLineEdit();
+
+    le_lastfm_password->setEchoMode(QLineEdit::PasswordEchoOnEdit);
+
+    QLabel *l_lastfm_login=new QLabel("login:");
+    QLabel *l_lastfm_password=new QLabel("password:");
+
+    QGridLayout *la_lastfm=new QGridLayout();
+
+    row=0;
+
+    la_lastfm->addWidget(l_lastfm_login, row, 0);
+    la_lastfm->addWidget(le_lastfm_login, row, 1);
+
+    row++;
+
+    la_lastfm->addWidget(l_lastfm_password, row, 0);
+    la_lastfm->addWidget(le_lastfm_password, row, 1);
+
+    QGroupBox *gb_lastfm=new QGroupBox("last.fm");
+    gb_lastfm->setLayout(la_lastfm);
+
 
     //
 
@@ -81,7 +112,8 @@ SettingsView::SettingsView(QWidget *parent)
     la_buttons->addStretch(1);
 
     QVBoxLayout *la_main=new QVBoxLayout();
-    la_main->addLayout(la_controls);
+    la_main->addWidget(gb_basic_settings);
+    la_main->addWidget(gb_lastfm);
     la_main->addLayout(la_buttons);
 
     setLayout(la_main);
@@ -95,7 +127,15 @@ int SettingsView::exec()
     le_file_filter->setText(settings->main.file_filter);
     cb_filter_empty_dirs->setChecked(settings->main.filter_empty_dirs);
 
+    le_lastfm_login->setText(settings->lastfm.login);
+    le_lastfm_password->setText(settings->lastfm.password);
+
     return QDialog::exec();
+}
+
+void SettingsView::lastfmBadauth()
+{
+    settings->lastfm.password.clear();
 }
 
 void SettingsView::updateSettings()
@@ -103,6 +143,9 @@ void SettingsView::updateSettings()
     settings->main.library_path=le_library_path->text().simplified();
     settings->main.file_filter=le_file_filter->text().simplified();
     settings->main.filter_empty_dirs=cb_filter_empty_dirs->isChecked();
+
+    settings->lastfm.login=le_lastfm_login->text().simplified();
+    settings->lastfm.password=le_lastfm_password->text().simplified();
 
     emit settings->updated();
 }

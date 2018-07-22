@@ -65,7 +65,7 @@ QString ffErrorString(int code)
 
 QString timeToStringSec(int64_t t)
 {
-    QTime time=QTime(0, 0).addSecs(t);
+    QTime time=QTime(0, 0).addSecs(int32_t(t));
 
     if(time.hour()>0)
         return time.toString("hh:mm:ss");
@@ -78,16 +78,17 @@ QString timeToStringMSec(int64_t t)
     return timeToStringSec(t*.001);
 }
 
-TagsReader::Tags TagsReader::get(const QString &filename)
+TrackMetadata readMetadata(const QString &filename)
 {
-    TagsReader::Tags tags;
+    TrackMetadata tmd;
 
+    tmd.filepath=filename;
 
     AVFormatContext *format_context=avformat_alloc_context();
 
-    if(avformat_open_input(&format_context, filename.toUtf8().data(), 0, 0)<0) {
+    if(avformat_open_input(&format_context, filename.toUtf8().data(), nullptr, nullptr)<0) {
         qWarning() << "TagsReader::get: avformat_open_input err";
-        return tags;
+        return tmd;
     }
 
     int ret=avformat_find_stream_info(format_context, nullptr);
@@ -97,38 +98,38 @@ TagsReader::Tags TagsReader::get(const QString &filename)
     }
 
 
-    static auto readTags=[](AVDictionary *metadata, TagsReader::Tags *tags) {
+    static auto readTags=[](AVDictionary *metadata, TrackMetadata *md) {
         AVDictionaryEntry *tag=nullptr;
 
         while((tag=av_dict_get(metadata, "", tag, AV_DICT_IGNORE_SUFFIX))) {
             QString key=QString::fromUtf8(tag->key);
 
             if(QString::compare(key, "artist", Qt::CaseInsensitive)==0)
-                tags->artist=QString(tag->value);
+                md->artist=QString(tag->value);
 
             if(QString::compare(key, "album", Qt::CaseInsensitive)==0)
-                tags->album=QString(tag->value);
+                md->album=QString(tag->value);
 
             if(QString::compare(key, "title", Qt::CaseInsensitive)==0)
-                tags->title=QString(tag->value);
+                md->title=QString(tag->value);
 
             if(QString::compare(key, "track", Qt::CaseInsensitive)==0)
-                tags->tracknumber=QString(tag->value);
+                md->track_number=QString(tag->value);
 
             if(QString::compare(key, "date", Qt::CaseInsensitive)==0)
-                tags->date=QString(tag->value);
+                md->date=QString(tag->value);
         }
     };
 
-    static auto readDuration=[](int64_t duration, AVRational time_base)->QString {
+    static auto readDuration=[](int64_t duration, AVRational time_base)->int32_t {
         if(duration!=AV_NOPTS_VALUE)
-            return timeToStringSec(duration*av_q2d(time_base));
+            return int32_t(duration*av_q2d(time_base));
 
-        return QString();
+        return -1;
     };
 
 
-    readTags(format_context->metadata, &tags);
+    readTags(format_context->metadata, &tmd);
 
 
     AVDictionary *metadata=nullptr;
@@ -138,13 +139,13 @@ TagsReader::Tags TagsReader::get(const QString &filename)
             metadata=format_context->streams[i]->metadata;
 
             if(format_context->streams[i]->duration!=AV_NOPTS_VALUE) {
-                tags.duration=readDuration(format_context->streams[i]->duration, format_context->streams[i]->time_base);
+                tmd.track_length=readDuration(format_context->streams[i]->duration, format_context->streams[i]->time_base);
 
             } else if(format_context->duration!=AV_NOPTS_VALUE) {
-                tags.duration=readDuration(format_context->duration, AV_TIME_BASE_Q);
+                tmd.track_length=readDuration(format_context->duration, AV_TIME_BASE_Q);
 
             } else {
-                tags.duration="???";
+                tmd.track_length=-1;
 
                 qWarning() << "TagsReader::get: wrong stream duration";
             }
@@ -155,7 +156,7 @@ TagsReader::Tags TagsReader::get(const QString &filename)
 
 
     if(metadata)
-        readTags(metadata, &tags);
+        readTags(metadata, &tmd);
 
 
     avformat_close_input(&format_context);
@@ -163,5 +164,5 @@ TagsReader::Tags TagsReader::get(const QString &filename)
     avformat_free_context(format_context);
 
 
-    return tags;
+    return tmd;
 }

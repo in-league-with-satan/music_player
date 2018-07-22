@@ -17,28 +17,30 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 ******************************************************************************/
 
-#ifndef FF_TOOLS_H
-#define FF_TOOLS_H
+#ifndef LASTFM_DB_H
+#define LASTFM_DB_H
 
-#include <QString>
-
-extern "C" {
-#include <libavformat/avformat.h>
-#include <libavutil/opt.h>
-#include <libavutil/time.h>
-#include <libswresample/swresample.h>
-}
+#include <QObject>
 
 #include "track_metadata.h"
 
-void avLogToQDebug();
-void avLogSetEnabled(bool state);
+class LastfmDb : public QObject
+{
+    Q_OBJECT
 
-QString ffErrorString(int code);
+public:
+    LastfmDb(QObject *parent=nullptr);
 
-QString timeToStringSec(int64_t t);
-QString timeToStringMSec(int64_t t);
+    bool addTrack(const TrackMetadata &tmd);
+    bool getTracks(TrackMetadataList *list);
+    bool removeTrack(QList <qint64> start_playing_time);
 
-TrackMetadata readMetadata(const QString &filename);
+    qint64 cacheSize();
 
-#endif // FF_TOOLS_H
+private:
+    void init();
+
+    QString db_name;
+};
+
+#endif // LASTFM_DB_H

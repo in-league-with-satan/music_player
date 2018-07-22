@@ -17,28 +17,34 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 ******************************************************************************/
 
-#ifndef FF_TOOLS_H
-#define FF_TOOLS_H
+#ifndef LASTFM_CTRL_H
+#define LASTFM_CTRL_H
 
-#include <QString>
-
-extern "C" {
-#include <libavformat/avformat.h>
-#include <libavutil/opt.h>
-#include <libavutil/time.h>
-#include <libswresample/swresample.h>
-}
+#include <QThread>
 
 #include "track_metadata.h"
 
-void avLogToQDebug();
-void avLogSetEnabled(bool state);
+class LastfmCtrl : public QThread
+{
+    Q_OBJECT
 
-QString ffErrorString(int code);
+public:
+    LastfmCtrl(QObject *parent=nullptr);
 
-QString timeToStringSec(int64_t t);
-QString timeToStringMSec(int64_t t);
+protected:
+    void run();
 
-TrackMetadata readMetadata(const QString &filename);
+signals:
+    void setEnabled(bool);
+    void setOnline(bool);
+    void setup(QString, QString);
+    void nowPlaying(TrackMetadata);
+    void playtimeChanged(qint64);
+    void cacheSize(qint64);
 
-#endif // FF_TOOLS_H
+    //
+
+    void badauth();
+};
+
+#endif // LASTFM_CTRL_H

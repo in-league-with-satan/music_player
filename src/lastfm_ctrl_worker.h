@@ -17,28 +17,47 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 ******************************************************************************/
 
-#ifndef FF_TOOLS_H
-#define FF_TOOLS_H
+#ifndef LASTFM_CTRL_WORKER_H
+#define LASTFM_CTRL_WORKER_H
 
-#include <QString>
-
-extern "C" {
-#include <libavformat/avformat.h>
-#include <libavutil/opt.h>
-#include <libavutil/time.h>
-#include <libswresample/swresample.h>
-}
+#include <QObject>
 
 #include "track_metadata.h"
 
-void avLogToQDebug();
-void avLogSetEnabled(bool state);
+class Lastfm;
+class LastfmDb;
 
-QString ffErrorString(int code);
+class LastfmCtrlWorker : public QObject
+{
+    Q_OBJECT
 
-QString timeToStringSec(int64_t t);
-QString timeToStringMSec(int64_t t);
+public:
+    LastfmCtrlWorker(QObject *parent=nullptr);
 
-TrackMetadata readMetadata(const QString &filename);
+private:
+    bool enabled;
+    bool online;
 
-#endif // FF_TOOLS_H
+    Lastfm *lfm;
+    LastfmDb *db;
+
+    TrackMetadata current_track_md;
+
+public slots:
+    void setup(QString login, QString password);
+
+    void setEnabled(bool state);
+    void setOnline(bool state);
+
+    void nowPlaying(TrackMetadata md);
+    void playtimeChanged(qint64 playtime);
+
+private slots:
+    void checkCache();
+
+signals:
+    void badauth();
+    void cacheSize(qint64);
+};
+
+#endif // LASTFM_CTRL_WORKER_H

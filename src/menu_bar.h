@@ -22,6 +22,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <QMenuBar>
 
+class QAction;
+
 class MenuBar : public QMenuBar
 {
     Q_OBJECT
@@ -30,14 +32,28 @@ public:
     MenuBar(QWidget *parent=0);
     ~MenuBar();
 
+private:
+    QAction *a_lastfm_online;
+    QAction *a_lastfm_cache_size;
+
+public slots:
+    void lastfmBadauth();
+    void setLastfmCacheSize(qint64 size);
+
 private slots:
     void showLibraryChanged(bool state);
     void cursorFollowsPlaybackChanged(bool state);
+
+    void lastfmEnabledChanged(bool state);
+    void lastfmOnlineChanged(bool state);
 
 signals:
     void showSettings();
     void showLibrary(bool state);
     void cursorFollowsPlayback(bool state);
+
+    void lastfmEnabled(bool state);
+    void lastfmOnline(bool state);
 };
 
 #endif // MENU_BAR_H

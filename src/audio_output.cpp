@@ -39,6 +39,7 @@ AudioOutput::AudioOutput(QObject *parent)
     dev_audio_output.setDecoder(decoder);
 
     connect(&dev_audio_output, SIGNAL(posChanged(qint64)), SIGNAL(posChanged(qint64)));
+    connect(&dev_audio_output, SIGNAL(playtimeChanged(qint64)), SIGNAL(playtimeChanged(qint64)));
 
     audio_format.setSampleRate(48000);
     audio_format.setChannelCount(2);

@@ -48,6 +48,7 @@ public:
 
     int64_t pos() const;
     int64_t duration() const;
+    int64_t playtime() const;
 
     QByteArray read();
 
