@@ -26,6 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <QDateTime>
 #include <QFileSystemModel>
 #include <QMenu>
+#include <QScroller>
 #include <qcoreapplication.h>
 
 #include "ff_tools.h"
@@ -68,6 +69,10 @@ PlaylistView::PlaylistView(QWidget *parent)
     table->setContextMenuPolicy(Qt::CustomContextMenu);
     table->setSelectionBehavior(QAbstractItemView::SelectRows);
     table->setFocusPolicy(Qt::StrongFocus);
+    table->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+    table->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
+
+    QScroller::grabGesture(table, QScroller::LeftMouseButtonGesture);
 
     QPalette p=table->palette();
     p.setColor(QPalette::Inactive, QPalette::Highlight, p.color(QPalette::Active, QPalette::Highlight));
