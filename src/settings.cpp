@@ -52,6 +52,8 @@ QString filename()
 Settings::Settings(QObject *parent) :
     QObject(parent)
 {
+    // main.font_ctrl.setFamily("arial black");
+    main.font_ctrl.setFamily("courier now");
 }
 
 bool Settings::load()
@@ -86,6 +88,7 @@ bool Settings::load()
     main.playlist=map_main.value(QStringLiteral("playlist")).toList();
     main.playlist_index=map_main.value(QStringLiteral("playlist_index"), 0).toInt();
     main.show_library=map_main.value(QStringLiteral("show_library"), true).toBool();
+    main.show_cover=map_main.value(QStringLiteral("show_cover"), true).toBool();
     main.volume_level=map_main.value(QStringLiteral("volume_level"), 1000).toInt();
     main.cursor_follows_playback=map_main.value(QStringLiteral("cursor_follows_playback"), true).toBool();
 
@@ -112,6 +115,7 @@ bool Settings::save()
     map_main.insert(QStringLiteral("playlist"), main.playlist);
     map_main.insert(QStringLiteral("playlist_index"), main.playlist_index);
     map_main.insert(QStringLiteral("show_library"), main.show_library);
+    map_main.insert(QStringLiteral("show_cover"), main.show_cover);
     map_main.insert(QStringLiteral("volume_level"), main.volume_level);
     map_main.insert(QStringLiteral("cursor_follows_playback"), main.cursor_follows_playback);
 

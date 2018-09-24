@@ -41,6 +41,13 @@ MenuBar::MenuBar(QWidget *parent)
     connect(action, SIGNAL(triggered(bool)), SLOT(showLibraryChanged(bool)));
     connect(action, SIGNAL(triggered(bool)), SIGNAL(showLibrary(bool)));
 
+    action=menu_view->addAction("show cover");
+    action->setShortcut(QKeySequence::fromString("ctrl+c"));
+    action->setCheckable(true);
+    action->setChecked(settings->main.show_cover);
+    connect(action, SIGNAL(triggered(bool)), SLOT(showCoverChanged(bool)));
+    connect(action, SIGNAL(triggered(bool)), SIGNAL(showCover(bool)));
+
     action=menu_view->addAction("cursor follows playback");
     // action->setShortcut(QKeySequence::fromString("ctrl+f"));
     action->setCheckable(true);
@@ -87,6 +94,11 @@ void MenuBar::setLastfmCacheSize(qint64 size)
 void MenuBar::showLibraryChanged(bool state)
 {
     settings->main.show_library=state;
+}
+
+void MenuBar::showCoverChanged(bool state)
+{
+    settings->main.show_cover=state;
 }
 
 void MenuBar::cursorFollowsPlaybackChanged(bool state)

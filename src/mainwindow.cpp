@@ -39,6 +39,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "settings.h"
 #include "settings_view.h"
 #include "lastfm_ctrl.h"
+#include "cover_view.h"
 
 #include "mainwindow.h"
 
@@ -98,31 +99,44 @@ MainWindow::MainWindow(QWidget *parent)
     connect(net_ctrl, SIGNAL(next()), playlist_view, SLOT(next()));
     connect(net_ctrl, SIGNAL(prev()), playlist_view, SLOT(prev()));
 
+    cover_view=new CoverView();
+    cover_view->setVisible2(settings->main.show_cover);
+
+    connect(playlist_view, SIGNAL(playRequest(QString)), cover_view, SLOT(setPath(QString)));
+    connect(menu_bar, SIGNAL(showCover(bool)), cover_view, SLOT(setVisible2(bool)));
 
     const QSize button_size(42, 24);
 
+    QFont font=settings->main.font_ctrl;
+
     QPushButton *b_play=new QPushButton("▶/▮▮");
+    b_play->setFont(font);
     b_play->setFixedSize(button_size);
     connect(b_play, SIGNAL(clicked(bool)), SLOT(playPause()));
 
     QPushButton *b_stop=new QPushButton("■");
+    b_stop->setFont(font);
     b_stop->setFixedSize(button_size);
     connect(b_stop, SIGNAL(clicked(bool)), SLOT(stop()));
 
     QPushButton *b_prev=new QPushButton("▮◀◀");
+    b_prev->setFont(font);
     b_prev->setFixedSize(button_size);
     connect(b_prev, SIGNAL(clicked(bool)), playlist_view, SLOT(prev()));
 
     QPushButton *b_next=new QPushButton("▶▶▮");
+    b_next->setFont(font);
     b_next->setFixedSize(button_size);
     connect(b_next, SIGNAL(clicked(bool)), playlist_view, SLOT(next()));
 
+/*
 #ifdef __WIN32__
     b_play->setText("►/▮▮");
     b_stop->setText("⬛");
     b_prev->setText("▮◄◄");
     b_next->setText("►►▮");
 #endif
+*/
 
     volume_level=new Progress(true);
     volume_level->setRange(0, 1000);
@@ -135,6 +149,14 @@ MainWindow::MainWindow(QWidget *parent)
     connect(progress, SIGNAL(posChanged(qint64)), audio_output, SIGNAL(seek(qint64)));
 
 
+    QGridLayout *la_filelist=new QGridLayout();
+    la_filelist->addWidget(filelist_view, 0, 0);
+    la_filelist->addWidget(cover_view, 1, 0);
+    la_filelist->setMargin(0);
+
+    QWidget *w_filelist=new QWidget();
+    w_filelist->setLayout(la_filelist);
+
     setStatusBar(new QStatusBar());
 
 
@@ -142,7 +164,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     QDockWidget *dock_filelist=new QDockWidget();
     dock_filelist->setObjectName("filelist");
-    dock_filelist->setWidget(filelist_view);
+    dock_filelist->setWidget(w_filelist);
     dock_filelist->setTitleBarWidget(new QWidget());
     dock_filelist->setFloating(true);
 
@@ -218,6 +240,8 @@ void MainWindow::playPause()
         } else {
             if(playlist_view->currentFile().isEmpty())
                 return;
+
+            cover_view->setPath(playlist_view->currentFile());
 
             audio_output->setFile(playlist_view->currentFile());
             audio_output->play();

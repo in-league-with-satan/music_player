@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <QObject>
 #include <QVariantMap>
+#include <QFont>
 
 #undef QT_NEEDS_QMAIN
 
@@ -48,8 +49,10 @@ public:
         int playlist_index;
         bool filter_empty_dirs;
         bool show_library;
+        bool show_cover;
         int volume_level;
         bool cursor_follows_playback;
+        QFont font_ctrl;
 
     } main;
 

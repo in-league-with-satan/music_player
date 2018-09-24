@@ -30,6 +30,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <qcoreapplication.h>
 
 #include "ff_tools.h"
+#include "settings.h"
 
 #include "playlist_view.h"
 
@@ -72,7 +73,8 @@ PlaylistView::PlaylistView(QWidget *parent)
     table->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
     table->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
 
-    QScroller::grabGesture(table, QScroller::LeftMouseButtonGesture);
+    // QScroller::grabGesture(table, QScroller::LeftMouseButtonGesture);
+    QScroller::grabGesture(table, QScroller::TouchGesture);
 
     QPalette p=table->palette();
     p.setColor(QPalette::Inactive, QPalette::Highlight, p.color(QPalette::Active, QPalette::Highlight));
@@ -188,6 +190,7 @@ void PlaylistView::appendRow(TrackMetadata &md)
     QStandardItem *item_state=new QStandardItem();
     item_state->setFlags(item_state->flags()^Qt::ItemIsEditable);
     item_state->setTextAlignment(Qt::AlignCenter);
+    item_state->setData(settings->main.font_ctrl, Qt::FontRole);
 
     model->setItem(row_num, col_num_track, item_tracknumber);
     model->setItem(row_num, col_num_date, item_date);
@@ -196,7 +199,6 @@ void PlaylistView::appendRow(TrackMetadata &md)
     model->setItem(row_num, col_num_title, item_title);
     model->setItem(row_num, col_num_duration, item_duration);
     model->setItem(row_num, col_num_state, item_state);
-
 }
 
 void PlaylistView::restorePlaylist(const QVariantList &pl)

@@ -17,46 +17,37 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 ******************************************************************************/
 
-#ifndef MENU_BAR_H
-#define MENU_BAR_H
+#ifndef COVER_VIEW_H
+#define COVER_VIEW_H
 
-#include <QMenuBar>
+#include <QWidget>
 
-class QAction;
+class QLabel;
 
-class MenuBar : public QMenuBar
+class CoverView : public QWidget
 {
     Q_OBJECT
 
 public:
-    MenuBar(QWidget *parent=0);
-    ~MenuBar();
+    explicit CoverView(QWidget *parent=nullptr);
 
-private:
-    QAction *a_lastfm_online;
-    QAction *a_lastfm_cache_size;
+    virtual QSize sizeHint() const;
+
+    void resizeEvent(QResizeEvent *event);
 
 public slots:
-    void lastfmBadauth();
-    void setLastfmCacheSize(qint64 size);
+    void setPath(const QString &path);
 
-private slots:
-    void showLibraryChanged(bool state);
-    void showCoverChanged(bool state);
+    void setVisible2(bool value);
 
-    void cursorFollowsPlaybackChanged(bool state);
+private:
+    QLabel *label;
 
-    void lastfmEnabledChanged(bool state);
-    void lastfmOnlineChanged(bool state);
+    QString current_path;
 
-signals:
-    void showSettings();
-    void showLibrary(bool state);
-    void showCover(bool state);
-    void cursorFollowsPlayback(bool state);
+    QPixmap current_pixmap;
 
-    void lastfmEnabled(bool state);
-    void lastfmOnline(bool state);
+    bool visible=true;
 };
 
-#endif // MENU_BAR_H
+#endif // COVER_VIEW_H
