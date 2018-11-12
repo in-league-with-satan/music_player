@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define AUDIO_OUTPUT_H
 
 #include <QAudioFormat>
+#include <QAudioDeviceInfo>
 
 #include "audio_io_device.h"
 
@@ -49,6 +50,10 @@ public slots:
 
     void setVolume(int volume); // max level=1000
 
+    void setDevice(bool use_default, QString dev_name);
+
+    void init();
+
 private:
     QAudioOutput *audio_output;
 
@@ -59,6 +64,13 @@ private:
     FFDecoder *decoder;
 
     bool open_state;
+
+    struct {
+        bool use_default=true;
+        QString name;
+        QAudioDeviceInfo di;
+
+    } dev_param;
 
 signals:
     void posChanged(qint64 );

@@ -26,6 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 AudioOutput::AudioOutput(QObject *parent)
     : QObject(parent)
+    , audio_output(nullptr)
     , open_state(false)
 {
     decoder=new FFDecoder();
@@ -48,15 +49,8 @@ AudioOutput::AudioOutput(QObject *parent)
     audio_format.setByteOrder(QAudioFormat::LittleEndian);
     audio_format.setSampleType(QAudioFormat::SignedInt);
 
-    QAudioDeviceInfo audio_device_info(QAudioDeviceInfo::defaultOutputDevice());
 
-    if(!audio_device_info.isFormatSupported(audio_format)) {
-        qCritical() << "audio format is not supported";
-
-        return;
-    }
-
-    audio_output=new QAudioOutput(QAudioDeviceInfo::defaultOutputDevice(), audio_format);
+    init();
 }
 
 AudioOutput::~AudioOutput()
@@ -72,6 +66,8 @@ void AudioOutput::setFile(const QString &filename)
 
 void AudioOutput::play()
 {
+    init();
+
     audio_output->start(&dev_audio_output);
     emit startPlaying();
 }
@@ -104,6 +100,14 @@ void AudioOutput::setVolume(int volume)
     audio_output->setVolume(volume*.001);
 }
 
+void AudioOutput::setDevice(bool use_default, QString dev_name)
+{
+    dev_param.use_default=use_default;
+    dev_param.name=dev_name;
+
+    init();
+}
+
 bool AudioOutput::isActive() const
 {
     return audio_output->state()==QAudio::ActiveState;
@@ -112,4 +116,42 @@ bool AudioOutput::isActive() const
 bool AudioOutput::isOpen() const
 {
     return open_state;
+}
+
+void AudioOutput::init()
+{
+    QAudioDeviceInfo di_tmp;
+
+    if(dev_param.use_default) {
+        di_tmp=QAudioDeviceInfo::defaultOutputDevice();
+
+    } else {
+        foreach(const QAudioDeviceInfo &di, QAudioDeviceInfo::availableDevices(QAudio::AudioOutput)) {
+            if(di.deviceName()==dev_param.name) {
+                di_tmp=di;
+                break;
+            }
+        }
+
+        if(di_tmp.isNull())
+            di_tmp=QAudioDeviceInfo::defaultOutputDevice();
+    }
+
+    if(dev_param.di!=di_tmp) {
+        dev_param.di=di_tmp;
+
+        if(audio_output) {
+            audio_output->stop();
+            audio_output->deleteLater();
+        }
+
+        audio_output=new QAudioOutput(dev_param.di, audio_format);
+
+        //
+
+        if(open_state) {
+            audio_output->start(&dev_audio_output);
+            emit startPlaying();
+        }
+    }
 }

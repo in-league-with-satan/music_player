@@ -64,6 +64,11 @@ public:
 
     } lastfm;
 
+    struct OutputDevice {
+        bool use_default;
+        QString dev_name;
+
+    } output_device;
 
 private:
     Settings(QObject *parent=0);

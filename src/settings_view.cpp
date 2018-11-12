@@ -23,8 +23,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <QPushButton>
 #include <QLineEdit>
 #include <QCheckBox>
+#include <QComboBox>
 #include <QFileDialog>
 #include <QGroupBox>
+#include <QAudioDeviceInfo>
 #include <qcoreapplication.h>
 
 #include "settings.h"
@@ -38,6 +40,12 @@ SettingsView::SettingsView(QWidget *parent)
 
     setModal(true);
 
+    cb_device_default=new QCheckBox("use default device");
+    cb_device_name=new QComboBox();
+
+    QPushButton *b_reload_devices=new QPushButton("reload");
+    connect(b_reload_devices, SIGNAL(clicked(bool)), SLOT(reloadOutputDevices()));
+
     QPushButton *b_select_dir=new QPushButton("select dir");
     connect(b_select_dir, SIGNAL(clicked(bool)), SLOT(selectLibraryPath()));
 
@@ -50,9 +58,23 @@ SettingsView::SettingsView(QWidget *parent)
 
     cb_filter_empty_dirs=new QCheckBox("filter empty dirs");
 
+    int row=0;
+
+    QGridLayout *la_device=new QGridLayout();
+    la_device->addWidget(cb_device_default, row++, 0);
+    la_device->addWidget(cb_device_name, row, 0);
+    la_device->addWidget(b_reload_devices, row, 1);
+    la_device->setColumnStretch(0, 10);
+    la_device->setColumnStretch(1, 0);
+
+    QGroupBox *gb_device=new QGroupBox("output device");
+    gb_device->setLayout(la_device);
+
+    //
+
     QGridLayout *la_basic_settings=new QGridLayout();
 
-    int row=0;
+    row=0;
 
     la_basic_settings->addWidget(l_library_path, row, 0);
     la_basic_settings->addWidget(le_library_path, row, 1);
@@ -112,6 +134,7 @@ SettingsView::SettingsView(QWidget *parent)
     la_buttons->addStretch(1);
 
     QVBoxLayout *la_main=new QVBoxLayout();
+    la_main->addWidget(gb_device);
     la_main->addWidget(gb_basic_settings);
     la_main->addWidget(gb_lastfm);
     la_main->addLayout(la_buttons);
@@ -119,6 +142,8 @@ SettingsView::SettingsView(QWidget *parent)
     setLayout(la_main);
 
     connect(this, SIGNAL(accepted()), SLOT(updateSettings()));
+
+    reloadOutputDevices();
 }
 
 int SettingsView::exec()
@@ -129,6 +154,17 @@ int SettingsView::exec()
 
     le_lastfm_login->setText(settings->lastfm.login);
     le_lastfm_password->setText(settings->lastfm.password);
+
+    cb_device_default->setChecked(settings->output_device.use_default);
+
+
+    for(int i=0; i<cb_device_name->count(); ++i) {
+        if(cb_device_name->itemText(i)==settings->output_device.dev_name) {
+            cb_device_name->setCurrentIndex(i);
+            break;
+        }
+    }
+
 
     return QDialog::exec();
 }
@@ -147,6 +183,9 @@ void SettingsView::updateSettings()
     settings->lastfm.login=le_lastfm_login->text().simplified();
     settings->lastfm.password=le_lastfm_password->text().simplified();
 
+    settings->output_device.use_default=cb_device_default->isChecked();
+    settings->output_device.dev_name=cb_device_name->currentText();
+
     emit settings->updated();
 }
 
@@ -158,4 +197,16 @@ void SettingsView::selectLibraryPath()
         return;
 
     le_library_path->setText(path);
+}
+
+void SettingsView::reloadOutputDevices()
+{
+    cb_device_name->clear();
+
+    foreach(QAudioDeviceInfo dev, QAudioDeviceInfo::availableDevices(QAudio::AudioOutput)) {
+        cb_device_name->addItem(dev.deviceName());
+
+        if(dev.deviceName()==settings->output_device.dev_name)
+            cb_device_name->setCurrentIndex(cb_device_name->count() - 1);
+    }
 }

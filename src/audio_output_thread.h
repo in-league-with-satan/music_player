@@ -67,6 +67,8 @@ signals:
     void seek(qint64 pos);
 
     void setVolume(int volume);
+
+    void setDevice(bool use_default, QString dev_name);
 };
 
 #endif // AUDIO_OUTPUT_THREAD_H

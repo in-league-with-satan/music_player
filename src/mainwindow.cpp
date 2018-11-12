@@ -277,6 +277,10 @@ void MainWindow::applySettings()
     lastfm->setEnabled(settings->lastfm.enabled);
     lastfm->setOnline(settings->lastfm.online);
     lastfm->setup(settings->lastfm.login, settings->lastfm.password);
+
+    //
+
+    audio_output->setDevice(settings->output_device.use_default, settings->output_device.dev_name);
 }
 
 void MainWindow::onDurationChanged(qint64 duration)

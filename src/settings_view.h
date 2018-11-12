@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 class QLineEdit;
 class QCheckBox;
+class QComboBox;
 
 class SettingsView : public QDialog
 {
@@ -42,7 +43,12 @@ private slots:
 
     void selectLibraryPath();
 
+    void reloadOutputDevices();
+
 private:
+    QCheckBox *cb_device_default;
+    QComboBox *cb_device_name;
+
     QLineEdit *le_library_path;
     QLineEdit *le_file_filter;
 
