@@ -63,6 +63,8 @@ private:
 
     FFDecoder *decoder;
 
+    qreal volume=1.;
+
     bool open_state;
 
     struct {

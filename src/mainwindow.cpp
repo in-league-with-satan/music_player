@@ -40,6 +40,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "settings_view.h"
 #include "lastfm_ctrl.h"
 #include "cover_view.h"
+#include "img_src.h"
 
 #include "mainwindow.h"
 
@@ -106,37 +107,37 @@ MainWindow::MainWindow(QWidget *parent)
     connect(menu_bar, SIGNAL(showCover(bool)), cover_view, SLOT(setVisible2(bool)));
 
     const QSize button_size(42, 24);
+    const QSize icon_size=button_size*.7;
 
     QFont font=settings->main.font_ctrl;
 
-    QPushButton *b_play=new QPushButton("▶/▮▮");
+    QPushButton *b_play=new QPushButton();
+    b_play->setIcon(img->get(ImgSrc::PmCode::play_pause));
     b_play->setFont(font);
-    b_play->setFixedSize(button_size);
+    b_play->setMinimumSize(button_size);
+    b_play->setIconSize(icon_size);
     connect(b_play, SIGNAL(clicked(bool)), SLOT(playPause()));
 
-    QPushButton *b_stop=new QPushButton("■");
+    QPushButton *b_stop=new QPushButton();
+    b_stop->setIcon(img->get(ImgSrc::PmCode::stop, true));
     b_stop->setFont(font);
-    b_stop->setFixedSize(button_size);
+    b_stop->setMinimumSize(button_size);
+    b_stop->setIconSize(icon_size);
     connect(b_stop, SIGNAL(clicked(bool)), SLOT(stop()));
 
-    QPushButton *b_prev=new QPushButton("▮◀◀");
+    QPushButton *b_prev=new QPushButton();
+    b_prev->setIcon(img->get(ImgSrc::PmCode::prev));
     b_prev->setFont(font);
-    b_prev->setFixedSize(button_size);
+    b_prev->setMinimumSize(button_size);
+    b_prev->setIconSize(icon_size);
     connect(b_prev, SIGNAL(clicked(bool)), playlist_view, SLOT(prev()));
 
-    QPushButton *b_next=new QPushButton("▶▶▮");
+    QPushButton *b_next=new QPushButton();
+    b_next->setIcon(img->get(ImgSrc::PmCode::next));
     b_next->setFont(font);
-    b_next->setFixedSize(button_size);
+    b_next->setMinimumSize(button_size);
+    b_next->setIconSize(icon_size);
     connect(b_next, SIGNAL(clicked(bool)), playlist_view, SLOT(next()));
-
-/*
-#ifdef __WIN32__
-    b_play->setText("►/▮▮");
-    b_stop->setText("⬛");
-    b_prev->setText("▮◄◄");
-    b_next->setText("►►▮");
-#endif
-*/
 
     volume_level=new Progress(true);
     volume_level->setRange(0, 1000);

@@ -4,7 +4,8 @@ QT += \
     widgets \
     multimedia \
     network \
-    sql
+    sql \
+    svg
 
 TARGET = music_player
 TEMPLATE = app
@@ -41,3 +42,6 @@ SOURCES += \
 
 HEADERS += \
     $$PWD/src/*.h
+
+RESOURCES += \
+    $$PWD/images.qrc

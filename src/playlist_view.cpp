@@ -31,6 +31,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "ff_tools.h"
 #include "settings.h"
+#include "img_src.h"
 
 #include "playlist_view.h"
 
@@ -318,13 +319,13 @@ void PlaylistView::mark(PlaylistView::Mark::T type)
         return;
     }
 
-    QString symbol="";
+    QIcon icon;
 
     if(type==Mark::Play)
-        symbol="▶";
+        icon=img->get(ImgSrc::PmCode::play);
 
     if(type==Mark::Pause)
-        symbol="▮▮";
+        icon=img->get(ImgSrc::PmCode::pause);
 
     for(int i=0; i<model->rowCount(); ++i) {
         item=model->item(i, col_num_state);
@@ -333,7 +334,7 @@ void PlaylistView::mark(PlaylistView::Mark::T type)
             continue;
 
         if(i==current_index) {
-            item->setData(symbol, Qt::DisplayRole);
+            item->setData(icon, Qt::DecorationRole);
 
             markRow(i, true);
 
@@ -347,6 +348,7 @@ void PlaylistView::mark(PlaylistView::Mark::T type)
                 continue;
 
             item->setData("", Qt::DisplayRole);
+            item->setData(QIcon(), Qt::DecorationRole);
 
             markRow(i, false);
         }

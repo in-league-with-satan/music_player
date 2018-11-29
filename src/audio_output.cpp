@@ -97,7 +97,7 @@ void AudioOutput::seek(qint64 pos)
 
 void AudioOutput::setVolume(int volume)
 {
-    audio_output->setVolume(volume*.001);
+    audio_output->setVolume(this->volume=volume*.001);
 }
 
 void AudioOutput::setDevice(bool use_default, QString dev_name)
@@ -146,6 +146,8 @@ void AudioOutput::init()
         }
 
         audio_output=new QAudioOutput(dev_param.di, audio_format);
+
+        audio_output->setVolume(volume);
 
         //
 
