@@ -66,6 +66,7 @@ PlaylistView::PlaylistView(QWidget *parent)
 
     table=new QTableView();
     table->setModel(model);
+    table->setWordWrap(false);
     table->setAlternatingRowColors(true);
     table->setSelectionMode(QAbstractItemView::ExtendedSelection);
     table->setContextMenuPolicy(Qt::CustomContextMenu);

@@ -46,6 +46,8 @@ public:
         STATE_PAUSED
     };
 
+    void restoreWindow();
+
 public slots:
     void playPause();
     void stop();

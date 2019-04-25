@@ -28,6 +28,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <QDragEnterEvent>
 #include <QDropEvent>
 #include <QMimeData>
+#include <qcoreapplication.h>
 
 #include "filelist_view.h"
 #include "playlist_view.h"
@@ -202,15 +203,6 @@ MainWindow::MainWindow(QWidget *parent)
 
     setCentralWidget(w_central);
 
-    if(settings->main.geometry.isEmpty()) {
-        showMaximized();
-
-    } else {
-        restoreGeometry(settings->main.geometry);
-        lists_widgets->restoreState(settings->main.state_window);
-        playlist_view->restoreState(settings->main.state_table);
-    }
-
     playlist_view->restorePlaylist(settings->main.playlist);
     playlist_view->setIndex(settings->main.playlist_index);
 
@@ -227,6 +219,28 @@ MainWindow::~MainWindow()
     settings->main.volume_level=volume_level->value();
 
     settings->save();
+}
+
+void MainWindow::restoreWindow()
+{
+    if(qApp->arguments().contains(QStringLiteral("--frameless"))) {
+        setWindowFlags(Qt::Widget | Qt::FramelessWindowHint);
+
+        show();
+        showMaximized();
+
+        lists_widgets->restoreState(settings->main.state_window);
+        playlist_view->restoreState(settings->main.state_table);
+
+    } else if(settings->main.geometry.isEmpty()) {
+        showMaximized();
+
+    } else {
+        restoreGeometry(settings->main.geometry);
+
+        lists_widgets->restoreState(settings->main.state_window);
+        playlist_view->restoreState(settings->main.state_table);
+    }
 }
 
 void MainWindow::playPause()
