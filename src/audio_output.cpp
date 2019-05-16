@@ -1,6 +1,6 @@
 /******************************************************************************
 
-Copyright © 2018 Andrey Cheprasov <ae.cheprasov@gmail.com>
+Copyright © 2018-2019 Andrey Cheprasov <ae.cheprasov@gmail.com>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -106,6 +106,11 @@ void AudioOutput::setDevice(bool use_default, QString dev_name)
     dev_param.name=dev_name;
 
     init();
+}
+
+void AudioOutput::skipSilence(bool enabled)
+{
+    decoder->skipSilence(enabled);
 }
 
 bool AudioOutput::isActive() const

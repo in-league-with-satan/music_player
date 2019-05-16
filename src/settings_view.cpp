@@ -1,6 +1,6 @@
 /******************************************************************************
 
-Copyright © 2018 Andrey Cheprasov <ae.cheprasov@gmail.com>
+Copyright © 2018-2019 Andrey Cheprasov <ae.cheprasov@gmail.com>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -58,6 +58,8 @@ SettingsView::SettingsView(QWidget *parent)
 
     cb_filter_empty_dirs=new QCheckBox("filter empty dirs");
 
+    cb_skip_silence=new QCheckBox("skip silence");
+
     int row=0;
 
     QGridLayout *la_device=new QGridLayout();
@@ -88,6 +90,11 @@ SettingsView::SettingsView(QWidget *parent)
     row++;
 
     la_basic_settings->addWidget(cb_filter_empty_dirs, row, 1);
+
+    row++;
+
+    la_basic_settings->addWidget(cb_skip_silence, row, 1);
+
 
     QGroupBox *gb_basic_settings=new QGroupBox("basic settings");
     gb_basic_settings->setLayout(la_basic_settings);
@@ -151,6 +158,7 @@ int SettingsView::exec()
     le_library_path->setText(settings->main.library_path);
     le_file_filter->setText(settings->main.file_filter);
     cb_filter_empty_dirs->setChecked(settings->main.filter_empty_dirs);
+    cb_skip_silence->setChecked(settings->main.skip_silence);
 
     le_lastfm_login->setText(settings->lastfm.login);
     le_lastfm_password->setText(settings->lastfm.password);
@@ -179,6 +187,7 @@ void SettingsView::updateSettings()
     settings->main.library_path=le_library_path->text().simplified();
     settings->main.file_filter=le_file_filter->text().simplified();
     settings->main.filter_empty_dirs=cb_filter_empty_dirs->isChecked();
+    settings->main.skip_silence=cb_skip_silence->isChecked();
 
     settings->lastfm.login=le_lastfm_login->text().simplified();
     settings->lastfm.password=le_lastfm_password->text().simplified();

@@ -1,6 +1,6 @@
 /******************************************************************************
 
-Copyright © 2018 Andrey Cheprasov <ae.cheprasov@gmail.com>
+Copyright © 2018-2019 Andrey Cheprasov <ae.cheprasov@gmail.com>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -37,7 +37,18 @@ public:
     int64_t duration=0;
     int64_t pos=0;
     int64_t playtime=0;
+
+    bool skip_silence=false;
+    int64_t silence_duration=0;
+    int64_t silence_send=0;
+
+    int64_t packet_duration=0;
     bool ended=false;
+
+    enum {
+        SILENCE_DURATION_TRIGGER=5000,
+        SILENCE_SEND_PERIOD=10000
+    };
 
     class Bitrate {
         std::list <uint64_t> accum;
@@ -73,6 +84,21 @@ public:
 
     } bitrate;
 };
+
+bool checkSilence(QByteArray *ba_data, double low_level_percent)
+{
+    static const int16_t max_value_16=std::numeric_limits<int16_t>::max();
+
+    int16_t *ptr=(int16_t*)ba_data->constData();
+
+    const int size=ba_data->size()*.5;
+
+    for(int i=0; i<size; ++i)
+        if(std::abs((double)ptr[i]/(double)max_value_16)>=low_level_percent)
+            return false;
+
+    return true;
+}
 
 FFDecoder::FFDecoder(QObject *parent)
     : QObject(parent)
@@ -264,6 +290,11 @@ void FFDecoder::close()
     stats.last_update_time=0;
 }
 
+void FFDecoder::skipSilence(bool enabled)
+{
+    context->skip_silence=enabled;
+}
+
 int64_t FFDecoder::pos() const
 {
     return context->pos;
@@ -287,14 +318,18 @@ QByteArray FFDecoder::read()
         if(!context->format_context)
             return ba;
 
+    read_loop:
+
         if(av_read_frame(context->format_context, &context->packet)>=0) {
             if(context->packet.stream_index==context->stream->index) {
                 if(avcodec_send_packet(context->codec_context, &context->packet)==0) {
                     uint64_t packet_bitrate=uint64_t(context->packet.size*(1000/(av_q2d(context->stream->time_base)*context->packet.duration*1000))*8);
                     context->bitrate.push(packet_bitrate);
 
-                    if(context->packet.duration!=0)
-                        context->playtime+=context->packet.duration*av_q2d(context->stream->time_base)*1000;
+                    if(context->packet.duration!=0) {
+                        context->packet_duration=context->packet.duration*av_q2d(context->stream->time_base)*1000;
+                        context->playtime+=context->packet_duration;
+                    }
 
                     if(av_gettime() - stats.last_update_time>=1000*1000) {
                         stats.pos=context->pos;
@@ -341,6 +376,26 @@ QByteArray FFDecoder::read()
                                 context->pos=av_q2d(context->stream->time_base)*context->frame->pts*1000;
                             }
 
+                            if(context->skip_silence && checkSilence(&ba_readed, .02)) {
+                                context->silence_duration+=context->packet_duration;
+
+                            } else {
+                                if(context->silence_duration>FFDecoderContext::SILENCE_DURATION_TRIGGER) {
+                                    seek(context->pos - 1000);
+                                }
+
+                                context->silence_duration=0;
+                                context->silence_send=-FFDecoderContext::SILENCE_SEND_PERIOD;
+                            }
+
+                            if(context->silence_duration>FFDecoderContext::SILENCE_DURATION_TRIGGER) {
+                                if(context->silence_duration - context->silence_send<FFDecoderContext::SILENCE_SEND_PERIOD) {
+                                    goto read_loop;
+
+                                } else {
+                                    context->silence_send=context->silence_duration;
+                                }
+                            }
 
                             ba+=ba_readed;
                         }
@@ -366,6 +421,7 @@ QByteArray FFDecoder::read()
         }
     }
 
+
     return ba;
 }
 
@@ -384,4 +440,7 @@ void FFDecoder::seek(int64_t pos)
     avcodec_flush_buffers(context->codec_context);
 
     stats.last_update_time=0;
+
+    context->silence_duration=0;
+    context->silence_send=-FFDecoderContext::SILENCE_SEND_PERIOD;
 }

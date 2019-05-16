@@ -1,6 +1,6 @@
 /******************************************************************************
 
-Copyright © 2018 Andrey Cheprasov <ae.cheprasov@gmail.com>
+Copyright © 2018-2019 Andrey Cheprasov <ae.cheprasov@gmail.com>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -92,6 +92,7 @@ bool Settings::load()
     main.show_cover=map_main.value(QStringLiteral("show_cover"), true).toBool();
     main.volume_level=map_main.value(QStringLiteral("volume_level"), 1000).toInt();
     main.cursor_follows_playback=map_main.value(QStringLiteral("cursor_follows_playback"), true).toBool();
+    main.skip_silence=map_main.value(QStringLiteral("skip_silence"), false).toBool();
 
     lastfm.enabled=map_lastfm.value(QStringLiteral("enabled"), true).toBool();
     lastfm.online=map_lastfm.value(QStringLiteral("online"), true).toBool();
@@ -123,6 +124,7 @@ bool Settings::save()
     map_main.insert(QStringLiteral("show_cover"), main.show_cover);
     map_main.insert(QStringLiteral("volume_level"), main.volume_level);
     map_main.insert(QStringLiteral("cursor_follows_playback"), main.cursor_follows_playback);
+    map_main.insert(QStringLiteral("skip_silence"), main.skip_silence);
 
     map_lastfm.insert(QStringLiteral("enabled"), lastfm.enabled);
     map_lastfm.insert(QStringLiteral("online"), lastfm.online);

@@ -1,6 +1,6 @@
 /******************************************************************************
 
-Copyright © 2018 Andrey Cheprasov <ae.cheprasov@gmail.com>
+Copyright © 2018-2019 Andrey Cheprasov <ae.cheprasov@gmail.com>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -72,6 +72,7 @@ void AudioOutputThread::run()
     connect(this, SIGNAL(setVolume(int)),   audio_output, SLOT(setVolume(int)), Qt::QueuedConnection);
     connect(this, SIGNAL(setDevice(bool, QString)),
                                             audio_output, SLOT(setDevice(bool, QString)), Qt::QueuedConnection);
+    connect(this, SIGNAL(skipSilence(bool)),audio_output, SLOT(skipSilence(bool)), Qt::QueuedConnection);
 
     connect(audio_output, SIGNAL(posChanged(qint64)),       SIGNAL(posChanged(qint64)), Qt::QueuedConnection);
     connect(audio_output, SIGNAL(durationChanged(qint64)),  SIGNAL(durationChanged(qint64)), Qt::QueuedConnection);

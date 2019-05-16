@@ -1,6 +1,6 @@
 /******************************************************************************
 
-Copyright © 2018 Andrey Cheprasov <ae.cheprasov@gmail.com>
+Copyright © 2018-2019 Andrey Cheprasov <ae.cheprasov@gmail.com>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -56,6 +56,7 @@ private:
     QLineEdit *le_lastfm_password;
 
     QCheckBox *cb_filter_empty_dirs;
+    QCheckBox *cb_skip_silence;
 };
 
 #endif // SETTINGS_VIEW_H
