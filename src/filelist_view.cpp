@@ -1,6 +1,6 @@
 /******************************************************************************
 
-Copyright © 2018 Andrey Cheprasov <ae.cheprasov@gmail.com>
+Copyright © 2018-2019 Andrey Cheprasov <ae.cheprasov@gmail.com>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -18,11 +18,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ******************************************************************************/
 
 #include <QDebug>
+#include <QApplication>
 #include <QLayout>
 #include <QTreeView>
 #include <QFileSystemModel>
 #include <QDirIterator>
 #include <QMenu>
+#include <QTimer>
 
 #include "file_proxy_model.h"
 
@@ -34,6 +36,12 @@ FilelistView::FilelistView(QWidget *parent)
     context_menu=new QMenu();
     context_menu->addAction("send to playlist", this, SLOT(menuSendToPlaylist()));
     context_menu->addAction("add to playlist", this, SLOT(menuAddToPlaylist()));
+
+    //
+
+    timer_hold_check=new QTimer();
+    timer_hold_check->setInterval(100);
+    connect(timer_hold_check, SIGNAL(timeout()), SLOT(holdCheck()));
 
     //
 
@@ -56,6 +64,7 @@ FilelistView::FilelistView(QWidget *parent)
 
     connect(tree_files, SIGNAL(customContextMenuRequested(QPoint)), SLOT(menuRequested(QPoint)));
     connect(tree_files, SIGNAL(doubleClicked(QModelIndex)), SLOT(onDoubleClicked(QModelIndex)));
+    connect(tree_files, SIGNAL(pressed(QModelIndex)), SLOT(onPressed(QModelIndex)));
 
     QVBoxLayout *la_main=new QVBoxLayout();
     la_main->addWidget(tree_files);
@@ -112,7 +121,28 @@ void FilelistView::onDoubleClicked(const QModelIndex &index)
      if(model_file_system->isDir(file_proxy_model->mapToSource(index)))
          return;
 
-      emit updatePlaylist(QStringList() << index.data(QFileSystemModel::FilePathRole).toString(), true);
+     emit updatePlaylist(QStringList() << index.data(QFileSystemModel::FilePathRole).toString(), true);
+}
+
+void FilelistView::onPressed(const QModelIndex &index)
+{
+    Q_UNUSED(index);
+
+    hold_counter=0;
+    timer_hold_check->start();
+}
+
+void FilelistView::holdCheck()
+{
+    if((QApplication::mouseButtons()&Qt::LeftButton)==0) {
+        timer_hold_check->stop();
+        return;
+    }
+
+    if(hold_counter++>=10) {
+        timer_hold_check->stop();
+        menuRequested(mapFromGlobal(QCursor::pos()));
+    }
 }
 
 void FilelistView::menuSendToPlaylist()

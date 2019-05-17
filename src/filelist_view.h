@@ -1,6 +1,6 @@
 /******************************************************************************
 
-Copyright © 2018 Andrey Cheprasov <ae.cheprasov@gmail.com>
+Copyright © 2018-2019 Andrey Cheprasov <ae.cheprasov@gmail.com>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 class QTreeView;
 class QFileSystemModel;
 class QMenu;
+class QTimer;
 
 class FileProxyModel;
 
@@ -48,6 +49,10 @@ public slots:
 private slots:
     void menuRequested(const QPoint &pos);
     void onDoubleClicked(const QModelIndex &index);
+    void onPressed(const QModelIndex &index);
+
+    void holdCheck();
+
     void menuSendToPlaylist();
     void menuAddToPlaylist();
 
@@ -61,6 +66,9 @@ private:
     QMenu *context_menu;
 
     FileProxyModel *file_proxy_model;
+
+    QTimer *timer_hold_check;
+    int hold_counter;
 
 signals:
     void updatePlaylist(const QStringList &list, bool drop_prev);
