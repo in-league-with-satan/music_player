@@ -113,6 +113,11 @@ void AudioOutput::skipSilence(bool enabled)
     decoder->skipSilence(enabled);
 }
 
+void AudioOutput::setupEq(const EQParams &params)
+{
+    decoder->setupEq(params);
+}
+
 bool AudioOutput::isActive() const
 {
     return audio_output->state()==QAudio::ActiveState;

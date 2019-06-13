@@ -22,6 +22,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <QObject>
 
+#include "ff_equalizer.h"
+
 class FFDecoderContext;
 
 struct FFDecStats {
@@ -47,6 +49,7 @@ public:
     void close();
 
     void skipSilence(bool enabled);
+    void setupEq(const EQParams &params);
 
     int64_t pos() const;
     int64_t duration() const;

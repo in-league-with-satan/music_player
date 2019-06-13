@@ -71,6 +71,8 @@ public:
 
     } output_device;
 
+    QVariantMap equalizer;
+
 private:
     Settings(QObject *parent=0);
 

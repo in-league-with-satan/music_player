@@ -102,6 +102,8 @@ bool Settings::load()
     output_device.use_default=map_output_device.value(QStringLiteral("use_default"), true).toBool();
     output_device.dev_name=map_output_device.value(QStringLiteral("dev_name")).toString();
 
+    equalizer=map_root.value(QStringLiteral("equalizer")).toMap();
+
     return file_readed;
 }
 
@@ -137,6 +139,7 @@ bool Settings::save()
     map_root.insert(QStringLiteral("main"), map_main);
     map_root.insert(QStringLiteral("lastfm"), map_lastfm);
     map_root.insert(QStringLiteral("output_device"), map_output_device);
+    map_root.insert(QStringLiteral("equalizer"), equalizer);
 
     QByteArray ba=QJsonDocument::fromVariant(map_root).toJson();
 

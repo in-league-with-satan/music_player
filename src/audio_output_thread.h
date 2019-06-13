@@ -71,6 +71,8 @@ signals:
     void setDevice(bool use_default, QString dev_name);
 
     void skipSilence(bool enabled);
+
+    void setupEq(EQParams params);
 };
 
 #endif // AUDIO_OUTPUT_THREAD_H

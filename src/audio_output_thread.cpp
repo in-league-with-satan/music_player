@@ -74,6 +74,8 @@ void AudioOutputThread::run()
                                             audio_output, SLOT(setDevice(bool, QString)), Qt::QueuedConnection);
     connect(this, SIGNAL(skipSilence(bool)),audio_output, SLOT(skipSilence(bool)), Qt::QueuedConnection);
 
+    connect(this, SIGNAL(setupEq(EQParams)),audio_output, SLOT(setupEq(EQParams)), Qt::QueuedConnection);
+
     connect(audio_output, SIGNAL(posChanged(qint64)),       SIGNAL(posChanged(qint64)), Qt::QueuedConnection);
     connect(audio_output, SIGNAL(durationChanged(qint64)),  SIGNAL(durationChanged(qint64)), Qt::QueuedConnection);
     connect(audio_output, SIGNAL(playtimeChanged(qint64)),  SIGNAL(playtimeChanged(qint64)), Qt::QueuedConnection);

@@ -33,6 +33,9 @@ public:
     AVCodecContext *codec_context=nullptr;
     AVFrame *frame=nullptr;
     SwrContext *convert_context=nullptr;
+
+    FFEqualizer *equalizer;
+
     AVPacket packet;
     int64_t duration=0;
     int64_t pos=0;
@@ -105,6 +108,8 @@ FFDecoder::FFDecoder(QObject *parent)
 {
     context=new FFDecoderContext();
 
+    context->equalizer=new FFEqualizer();
+
     av_init_packet(&context->packet);
 
     context->frame=av_frame_alloc();
@@ -115,6 +120,8 @@ FFDecoder::~FFDecoder()
     close();
 
     av_frame_unref(context->frame);
+
+    delete context->equalizer;
 
     delete context;
 }
@@ -295,6 +302,11 @@ void FFDecoder::skipSilence(bool enabled)
     context->skip_silence=enabled;
 }
 
+void FFDecoder::setupEq(const EQParams &params)
+{
+    context->equalizer->setup(params);
+}
+
 int64_t FFDecoder::pos() const
 {
     return context->pos;
@@ -354,6 +366,8 @@ QByteArray FFDecoder::read()
                         }
 
                         if(ret>=0) {
+                            context->equalizer->proc(context->frame);
+
                             uint8_t *out_samples;
 
                             int out_num_samples=av_rescale_rnd(swr_get_delay(context->convert_context, context->codec_context->sample_rate)
