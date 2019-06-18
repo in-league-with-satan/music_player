@@ -35,7 +35,7 @@ EqualizerView::EqualizerView(QWidget *parent)
                           << 2500 << 3150 << 4000 << 5000 << 6300 << 8000 << 10000 << 12500 << 16000
                           << 20000)
 {
-    setMinimumSize(640, 360);
+    setMinimumSize(1024, 360);
 
     setWindowTitle("graphic equalizer");
 
@@ -92,7 +92,7 @@ EqualizerView::EqualizerView(QWidget *parent)
         label=new QLabel(freq<1000 ? QString::number(freq) : QString("%1k").arg(freq*.001));
         label->setAlignment(Qt::AlignCenter);
 
-        la_item->addWidget(sl);
+        la_item->addWidget(sl, 0, Qt::AlignHCenter);
         la_item->addWidget(label);
 
         la_band->addLayout(la_item);

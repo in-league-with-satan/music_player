@@ -206,6 +206,9 @@ build_ff() {
     --enable-decoder=libfdk_aac \
     --enable-decoder=ac3 \
     --enable-decoder=alac \
+    --enable-filter=volume \
+    --enable-filter=equalizer \
+    --enable-filter=aresample \
     --enable-small
 
   make -j$cpu_count

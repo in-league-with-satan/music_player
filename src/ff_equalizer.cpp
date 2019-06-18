@@ -85,23 +85,16 @@ int FFEqualizer::init()
 
 
     if(!d->abuffer_ctx) {
-        qCritical() << "Could not allocate the abuffer instance";
+        qCritical() << "could not allocate the abuffer instance";
         free();
         return AVERROR(ENOMEM);
     }
 
     if(ret<0) {
-        qCritical() << "Could not initialize the abuffer filter" << ffErrorString(ret);
+        qCritical() << "could not initialize the abuffer filter" << ffErrorString(ret);
         free();
         return ret;
     }
-
-    if(ret<0) {
-        qCritical() << "Could not initialize the equalizer filter" << ffErrorString(ret);
-        free();
-        return ret;
-    }
-
 
     d->eq.resize(d->params.size());
 
@@ -114,7 +107,8 @@ int FFEqualizer::init()
         ret=avfilter_graph_create_filter(&d->eq[i], avfilter_get_by_name("equalizer"), "equalizer", args.toLatin1().constData(), NULL, d->filter_graph);
 
         if(ret<0) {
-            qCritical() << "Could not initialize the equalizer filter" << i << ffErrorString(ret);
+            qCritical() << "could not initialize the equalizer filter" << i << ffErrorString(ret);
+            free();
             return ret;
         }
     }
@@ -122,7 +116,7 @@ int FFEqualizer::init()
     ret=avfilter_graph_create_filter(&d->abuffersink_ctx, avfilter_get_by_name("abuffersink"), "sink", NULL, NULL, d->filter_graph);
 
     if(!d->abuffersink_ctx) {
-        qCritical() << "Could not allocate the abuffersink instance";
+        qCritical() << "could not allocate the abuffersink instance";
         free();
         return AVERROR(ENOMEM);
     }
@@ -140,7 +134,8 @@ int FFEqualizer::init()
     ret=avfilter_link(d->abuffer_ctx, 0, d->eq[0], 0);
 
     if(ret<0) {
-        qCritical() << "Error connecting filters abuffer-eq0" << ffErrorString(ret);
+        qCritical() << "error connecting filters abuffer-eq0" << ffErrorString(ret);
+        free();
         return ret;
     }
 
@@ -149,7 +144,8 @@ int FFEqualizer::init()
             ret=avfilter_link(d->eq[i - 1], 0, d->eq[i], 0);
 
         if(ret<0) {
-            qCritical() << QString("Error connecting filters eq%1-eq%2").arg(i - 1).arg(i) << ffErrorString(ret);
+            qCritical() << QString("error connecting filters eq%1-eq%2").arg(i - 1).arg(i) << ffErrorString(ret);
+            free();
             return ret;
         }
     }
@@ -158,7 +154,8 @@ int FFEqualizer::init()
         ret=avfilter_link(d->eq[d->eq.size() - 1], 0, d->abuffersink_ctx, 0);
 
     if(ret<0) {
-        qCritical() << QString("Error connecting filters eq%1-sink").arg(d->eq.size() - 1) << ffErrorString(ret);
+        qCritical() << QString("error connecting filters eq%1-sink").arg(d->eq.size() - 1) << ffErrorString(ret);
+        free();
         return ret;
     }
 
@@ -166,7 +163,7 @@ int FFEqualizer::init()
     ret=avfilter_graph_config(d->filter_graph, NULL);
 
     if(ret<0) {
-        qCritical() << "Error configuring the filter graph" << ffErrorString(ret);
+        qCritical() << "error configuring the filter graph" << ffErrorString(ret);
         free();
         return ret;
     }
