@@ -29,11 +29,14 @@ struct FFEqualizerContext
     int format=0;
     int channels=0;
 
-    EQParams params;
+    double volume=0.;
+
+    EQBands eq_bands;
 
     AVFilterGraph *filter_graph=nullptr;
-    AVFilterContext *abuffer_ctx=nullptr;
-    AVFilterContext *abuffersink_ctx=nullptr;
+    AVFilterContext *ctxt_abuffer=nullptr;
+    AVFilterContext *ctxt_abuffersink=nullptr;
+    AVFilterContext *ctxt_volume=nullptr;
 
     AVFrame *frame;
 
@@ -55,9 +58,9 @@ int FFEqualizer::init()
 {
     free();
 
-    qInfo() << "FFEqualizer::init: d->params.size" << d->params.size();
+    qInfo() << "FFEqualizer::init: d->params.size" << d->eq_bands.size();
 
-    if(d->params.size()<1)
+    if(d->eq_bands.size()<1)
         return AVERROR_INVALIDDATA;
 
     int ret;
@@ -80,11 +83,11 @@ int FFEqualizer::init()
             .arg(d->channels)
             .arg(ch_layout);
 
-    ret=avfilter_graph_create_filter(&d->abuffer_ctx, avfilter_get_by_name("abuffer"), "src",
+    ret=avfilter_graph_create_filter(&d->ctxt_abuffer, avfilter_get_by_name("abuffer"), "src",
                                      args.toLatin1().constData(), NULL, d->filter_graph);
 
 
-    if(!d->abuffer_ctx) {
+    if(!d->ctxt_abuffer) {
         qCritical() << "could not allocate the abuffer instance";
         free();
         return AVERROR(ENOMEM);
@@ -96,13 +99,24 @@ int FFEqualizer::init()
         return ret;
     }
 
-    d->eq.resize(d->params.size());
+    ret=avfilter_graph_create_filter(&d->ctxt_volume, avfilter_get_by_name("volume"), "volume",
+                                     QString("volume=%1dB").arg(d->volume).toLatin1().constData(),
+                                     NULL, d->filter_graph);
 
-    for(size_t i=0; i<d->params.size(); ++i) {
+    if(ret<0) {
+        qCritical() << "could not initialize the volume filter" << ffErrorString(ret);
+        free();
+        return ret;
+    }
+
+
+    d->eq.resize(d->eq_bands.size());
+
+    for(size_t i=0; i<d->eq_bands.size(); ++i) {
         args=QString("g=%1:f=%2:t=h:w=%3")
-                .arg(d->params[i].gain)
-                .arg(d->params[i].frequency)
-                .arg(d->params[i].width);
+                .arg(d->eq_bands[i].gain)
+                .arg(d->eq_bands[i].frequency)
+                .arg(d->eq_bands[i].width);
 
         ret=avfilter_graph_create_filter(&d->eq[i], avfilter_get_by_name("equalizer"), "equalizer", args.toLatin1().constData(), NULL, d->filter_graph);
 
@@ -113,9 +127,9 @@ int FFEqualizer::init()
         }
     }
 
-    ret=avfilter_graph_create_filter(&d->abuffersink_ctx, avfilter_get_by_name("abuffersink"), "sink", NULL, NULL, d->filter_graph);
+    ret=avfilter_graph_create_filter(&d->ctxt_abuffersink, avfilter_get_by_name("abuffersink"), "sink", NULL, NULL, d->filter_graph);
 
-    if(!d->abuffersink_ctx) {
+    if(!d->ctxt_abuffersink) {
         qCritical() << "could not allocate the abuffersink instance";
         free();
         return AVERROR(ENOMEM);
@@ -125,16 +139,25 @@ int FFEqualizer::init()
     static const int64_t out_channel_layouts[]={ av_get_default_channel_layout(d->channels), -1 };
     static const int out_sample_rates[]={ d->sample_rate, -1 };
 
-    ret=av_opt_set_int_list(d->abuffersink_ctx, "sample_fmts", out_sample_fmts, -1, AV_OPT_SEARCH_CHILDREN);
-    ret=av_opt_set_int_list(d->abuffersink_ctx, "channel_layouts", out_channel_layouts, -1, AV_OPT_SEARCH_CHILDREN);
-    ret=av_opt_set_int_list(d->abuffersink_ctx, "sample_rates", out_sample_rates, -1, AV_OPT_SEARCH_CHILDREN);
+    ret=av_opt_set_int_list(d->ctxt_abuffersink, "sample_fmts", out_sample_fmts, -1, AV_OPT_SEARCH_CHILDREN);
+    ret=av_opt_set_int_list(d->ctxt_abuffersink, "channel_layouts", out_channel_layouts, -1, AV_OPT_SEARCH_CHILDREN);
+    ret=av_opt_set_int_list(d->ctxt_abuffersink, "sample_rates", out_sample_rates, -1, AV_OPT_SEARCH_CHILDREN);
 
     //
 
-    ret=avfilter_link(d->abuffer_ctx, 0, d->eq[0], 0);
+    ret=avfilter_link(d->ctxt_abuffer, 0, d->ctxt_volume, 0);
 
     if(ret<0) {
-        qCritical() << "error connecting filters abuffer-eq0" << ffErrorString(ret);
+        qCritical() << "error connecting filters abuffer-volume" << ffErrorString(ret);
+        free();
+        return ret;
+    }
+
+
+    ret=avfilter_link(d->ctxt_volume, 0, d->eq[0], 0);
+
+    if(ret<0) {
+        qCritical() << "error connecting filters volume-eq0" << ffErrorString(ret);
         free();
         return ret;
     }
@@ -151,7 +174,7 @@ int FFEqualizer::init()
     }
 
     if(ret>=0)
-        ret=avfilter_link(d->eq[d->eq.size() - 1], 0, d->abuffersink_ctx, 0);
+        ret=avfilter_link(d->eq[d->eq.size() - 1], 0, d->ctxt_abuffersink, 0);
 
     if(ret<0) {
         qCritical() << QString("error connecting filters eq%1-sink").arg(d->eq.size() - 1) << ffErrorString(ret);
@@ -175,7 +198,8 @@ int FFEqualizer::init()
 
 void FFEqualizer::setup(EQParams params)
 {
-    d->params=params;
+    d->eq_bands=params.bands;
+    d->volume=params.volume_value;
 
     free();
 
@@ -201,14 +225,14 @@ bool FFEqualizer::proc(AVFrame *frame)
         return false;
     }
 
-    int ret=av_buffersrc_add_frame(d->abuffer_ctx, frame);
+    int ret=av_buffersrc_add_frame(d->ctxt_abuffer, frame);
 
     if(ret<0) {
         qCritical() << "Error write frame to the abuffer" << ffErrorString(ret);
         return false;
     }
 
-    ret=av_buffersink_get_frame(d->abuffersink_ctx, frame);
+    ret=av_buffersink_get_frame(d->ctxt_abuffersink, frame);
 
     if(ret<0) {
         qCritical() << "Error read frame from the abuffersink" << ffErrorString(ret);
@@ -220,14 +244,19 @@ bool FFEqualizer::proc(AVFrame *frame)
 
 void FFEqualizer::free()
 {
-    if(d->abuffer_ctx) {
-        avfilter_free(d->abuffer_ctx);
-        d->abuffer_ctx=nullptr;
+    if(d->ctxt_abuffer) {
+        avfilter_free(d->ctxt_abuffer);
+        d->ctxt_abuffer=nullptr;
     }
 
-    if(d->abuffersink_ctx) {
-        avfilter_free(d->abuffersink_ctx);
-        d->abuffersink_ctx=nullptr;
+    if(d->ctxt_volume) {
+        avfilter_free(d->ctxt_volume);
+        d->ctxt_volume=nullptr;
+    }
+
+    if(d->ctxt_abuffersink) {
+        avfilter_free(d->ctxt_abuffersink);
+        d->ctxt_abuffersink=nullptr;
     }
 
     for(size_t i=0; i<d->eq.size(); ++i) {

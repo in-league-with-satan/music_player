@@ -27,6 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 class QSlider;
 class QComboBox;
 class QCheckBox;
+class QLineEdit;
 
 class EqualizerView : public QDialog
 {
@@ -36,7 +37,8 @@ public:
     explicit EqualizerView(QWidget *parent=nullptr);
     ~EqualizerView();
 
-    EQParams params(bool full=true);
+    EQParams params(bool full=true) const;
+    double volume() const;
 
     QVariantMap getPresets() const;
     void setPresets(const QVariantMap &map_root);
@@ -54,19 +56,29 @@ private slots:
 
     void setParams(const EQParams &params);
 
-    void onCbIndexChanged(int index);
+    void onPresetIndexChanged(int index);
+
+    void onAutoVolStateChanged(bool state);
+
+    void calcVol();
 
 private:
-    EQParams paramsBase(bool full);
+    EQParams paramsBase(bool full) const;
 
-    const QVector <int> band;
+    const QVector <int> freq;
     QVector <QSlider*> slider;
 
     QComboBox *cb_preset;
 
     QCheckBox *cb_enabled;
 
+    QCheckBox *cb_volume_auto;
+
+    QLineEdit *le_volume;
+
     QVariantMap map_preset;
+
+    double volume_manual=0;
 };
 
 #endif // EQUALIZER_VIEW_H

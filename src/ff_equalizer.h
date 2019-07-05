@@ -26,14 +26,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 struct FFEqualizerContext;
 
-struct EQParam
+struct EQBand
 {
     int frequency;
     int width;
     double gain;
 };
 
-typedef std::vector <EQParam> EQParams;
+typedef std::vector <EQBand> EQBands;
+
+struct EQParams
+{
+    EQBands bands;
+    double volume_manual=0.;
+    double volume_value=0.;
+    bool volume_auto=false;
+};
 
 class FFEqualizer
 {
@@ -52,7 +60,8 @@ private:
     FFEqualizerContext *d;
 };
 
-Q_DECLARE_METATYPE(EQParam)
+Q_DECLARE_METATYPE(EQBand)
+Q_DECLARE_METATYPE(EQBands)
 Q_DECLARE_METATYPE(EQParams)
 
 #endif // FF_EQUALIZER_H

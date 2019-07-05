@@ -330,7 +330,7 @@ QByteArray FFDecoder::read()
         if(!context->format_context)
             return ba;
 
-    read_loop:
+read_loop:
 
         if(av_read_frame(context->format_context, &context->packet)>=0) {
             if(context->packet.stream_index==context->stream->index) {

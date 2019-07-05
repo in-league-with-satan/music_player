@@ -25,12 +25,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <QPushButton>
 #include <QComboBox>
 #include <QCheckBox>
+#include <QLineEdit>
 
 #include "equalizer_view.h"
 
 EqualizerView::EqualizerView(QWidget *parent)
     : QDialog(parent)
-    , band(QVector<int>() << 20 << 25 << 32 << 40 << 50 << 63 << 80 << 125 << 160
+    , freq(QVector<int>() << 20 << 25 << 32 << 40 << 50 << 63 << 80 << 125 << 160
                           << 200 << 250 << 315 << 400 << 500 << 630 << 800 << 1000 << 1250 << 1600
                           << 2500 << 3150 << 4000 << 5000 << 6300 << 8000 << 10000 << 12500 << 16000
                           << 20000)
@@ -42,7 +43,7 @@ EqualizerView::EqualizerView(QWidget *parent)
     //
 
     cb_preset=new QComboBox();
-    connect(cb_preset, SIGNAL(currentIndexChanged(int)), SLOT(onCbIndexChanged(int)));
+    connect(cb_preset, SIGNAL(currentIndexChanged(int)), SLOT(onPresetIndexChanged(int)));
 
     QPushButton *b_preset_add=new QPushButton("add");
     connect(b_preset_add, SIGNAL(clicked(bool)), SLOT(presetAdd()));
@@ -83,11 +84,13 @@ EqualizerView::EqualizerView(QWidget *parent)
     QSlider *sl;
     QLabel *label;
 
-    for(int freq:band) {
+    for(int freq:freq) {
         QVBoxLayout *la_item=new QVBoxLayout();
 
         sl=new QSlider();
         sl->setRange(-120, 120);
+
+        connect(sl, SIGNAL(valueChanged(int)), SLOT(calcVol()));
 
         label=new QLabel(freq<1000 ? QString::number(freq) : QString("%1k").arg(freq*.001));
         label->setAlignment(Qt::AlignCenter);
@@ -99,6 +102,16 @@ EqualizerView::EqualizerView(QWidget *parent)
 
         slider << sl;
     }
+
+    le_volume=new QLineEdit();
+
+    cb_volume_auto=new QCheckBox("auto");
+    connect(cb_volume_auto, SIGNAL(toggled(bool)), SLOT(onAutoVolStateChanged(bool)));
+
+    QHBoxLayout *la_volume=new QHBoxLayout();
+    la_volume->addWidget(new QLabel("volume:"));
+    la_volume->addWidget(cb_volume_auto);
+    la_volume->addWidget(le_volume);
 
     QPushButton *b_reset=new QPushButton("reset");
     connect(b_reset, SIGNAL(clicked(bool)), SLOT(reset()));
@@ -122,6 +135,7 @@ EqualizerView::EqualizerView(QWidget *parent)
     QVBoxLayout *la_main=new QVBoxLayout();
     la_main->addLayout(la_preset);
     la_main->addLayout(la_band);
+    la_main->addLayout(la_volume);
     la_main->addLayout(la_buttons);
 
     setLayout(la_main);
@@ -131,7 +145,7 @@ EqualizerView::~EqualizerView()
 {
 }
 
-EQParams EqualizerView::params(bool full)
+EQParams EqualizerView::params(bool full) const
 {
     if(!cb_enabled->isChecked())
         return EQParams();
@@ -139,23 +153,32 @@ EQParams EqualizerView::params(bool full)
     return paramsBase(full);
 }
 
-EQParams EqualizerView::paramsBase(bool full)
+double EqualizerView::volume() const
+{
+    return le_volume->text().toDouble();
+}
+
+EQParams EqualizerView::paramsBase(bool full) const
 {
     EQParams params;
-    EQParam param;
+    EQBand band;
 
     for(int i=0; i<slider.size(); ++i) {
         if(!full && slider[i]->value()==0)
             continue;
 
-        param.frequency=band[i];
+        band.frequency=freq[i];
 
-        param.width=band[i]*1.2;
+        band.width=freq[i]*1.2;
 
-        param.gain=slider[i]->value()*.1;
+        band.gain=slider[i]->value()*.1;
 
-        params.push_back(param);
+        params.bands.push_back(band);
     }
+
+    params.volume_auto=cb_volume_auto->isChecked();
+    params.volume_manual=volume_manual;
+    params.volume_value=volume();
 
     return params;
 }
@@ -163,18 +186,23 @@ EQParams EqualizerView::paramsBase(bool full)
 QVariantMap EqualizerView::getPresets() const
 {
     QVariantMap map_root;
+    QVariantMap map_values;
     QVariantMap map_preset;
 
     for(int i_preset=0; i_preset<cb_preset->count(); ++i_preset) {
-        QVariantList list;
+        QVariantList list_gain;
 
         EQParams params=cb_preset->itemData(i_preset).value<EQParams>();
 
-        for(int i_band=0; i_band<params.size(); ++i_band) {
-            list << int(params[i_band].gain*10);
+        for(int i_band=0; i_band<params.bands.size(); ++i_band) {
+            list_gain << int(params.bands[i_band].gain*10);
         }
 
-        map_preset.insert(cb_preset->itemData(i_preset, Qt::DisplayRole).toString(), list);
+        map_values.insert("gain", list_gain);
+        map_values.insert("volume_manual", params.volume_manual);
+        map_values.insert("volume_auto", params.volume_auto);
+
+        map_preset.insert(cb_preset->itemData(i_preset, Qt::DisplayRole).toString(), map_values);
     }
 
     map_root.insert("preset", map_preset);
@@ -188,18 +216,28 @@ void EqualizerView::setPresets(const QVariantMap &map_root)
 {
     QVariantMap map_preset=map_root.value("preset").toMap();
 
+    QList <double> vol_man;
+    QList <bool> vol_auto;
+
     for(int i_preset=0; i_preset<map_preset.size(); ++i_preset) {
         EQParams params;
-        EQParam param;
+        EQBand band;
 
-        QVariantList list=map_preset.values()[i_preset].toList();
+        QVariantMap map_values=map_preset.values()[i_preset].toMap();
+        QVariantList list_gain=map_values.value("gain").toList();
 
-        for(int i_band=0; i_band<std::min(list.size(), band.size()); ++i_band) {
-            param.frequency=band[i_band];
-            param.width=band[i_band]*1.2;
-            param.gain=list[i_band].toDouble()*.1;
+        params.volume_auto=map_values.value("volume_auto").toBool();
+        params.volume_manual=map_values.value("volume_manual").toDouble();
 
-            params.push_back(param);
+        vol_auto << params.volume_auto;
+        vol_man << params.volume_manual;
+
+        for(int i_band=0; i_band<std::min(list_gain.size(), freq.size()); ++i_band) {
+            band.frequency=freq[i_band];
+            band.width=freq[i_band]*1.2;
+            band.gain=list_gain[i_band].toDouble()*.1;
+
+            params.bands.push_back(band);
         }
 
         cb_preset->addItem(map_preset.keys()[i_preset].simplified(), QVariant::fromValue(params));
@@ -211,6 +249,13 @@ void EqualizerView::setPresets(const QVariantMap &map_root)
         cb_preset->setCurrentIndex(0);
 
     cb_enabled->setChecked(map_root.value("enabled").toBool());
+
+    if(vol_man.size()>cb_preset->currentIndex()) {
+        volume_manual=vol_man[cb_preset->currentIndex()];
+        cb_volume_auto->setChecked(vol_auto[cb_preset->currentIndex()]);
+    }
+
+    calcVol();
 }
 
 void EqualizerView::reset()
@@ -218,6 +263,8 @@ void EqualizerView::reset()
     for(QSlider *sl:slider) {
         sl->setValue(0);
     }
+
+    calcVol();
 }
 
 bool EqualizerView::presetAdd()
@@ -263,6 +310,11 @@ void EqualizerView::onOk()
             return;
     }
 
+    if(!cb_volume_auto->isChecked()) {
+         volume_manual=le_volume->text().toDouble();
+         le_volume->setText(QString::number(volume_manual));
+    }
+
     cb_preset->setItemData(cb_preset->currentIndex(), QVariant::fromValue(paramsBase(true)));
 
     accept();
@@ -278,15 +330,48 @@ void EqualizerView::onCancel()
 void EqualizerView::setParams(const EQParams &params)
 {
     for(int i=0; i<slider.size(); ++i) {
-        if(params.size()<=i)
+        if(params.bands.size()<=i)
             return;
 
-        slider[i]->setValue(params[i].gain*10);
+        slider[i]->setValue(params.bands[i].gain*10);
     }
+
+    cb_volume_auto->setChecked(params.volume_auto);
+    volume_manual=params.volume_manual;
+
+    calcVol();
 }
 
-void EqualizerView::onCbIndexChanged(int index)
+void EqualizerView::onPresetIndexChanged(int index)
 {
     setParams(cb_preset->itemData(index).value<EQParams>());
+}
+
+void EqualizerView::onAutoVolStateChanged(bool state)
+{
+    if(state) {
+        calcVol();
+
+    } else {
+        le_volume->setText(QString::number(volume_manual));
+    }
+
+    le_volume->setReadOnly(state);
+}
+
+void EqualizerView::calcVol()
+{
+    if(!cb_volume_auto->isChecked()) {
+        le_volume->setText(QString::number(volume_manual));
+        return;
+    }
+
+    double max=0.;
+
+    for(int i=0; i<slider.size(); ++i) {
+        max=std::max(max, slider[i]->value()/10.);
+    }
+
+    le_volume->setText(QString::number(-max));
 }
 
