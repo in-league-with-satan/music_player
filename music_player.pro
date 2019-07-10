@@ -24,6 +24,8 @@ static {
 CONFIG(debug, debug|release):{
     BUILD_OPT=debug
 
+} else {
+    DEFINES += QT_NO_DEBUG_OUTPUT
 }
 
 

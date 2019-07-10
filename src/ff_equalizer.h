@@ -1,6 +1,6 @@
 /******************************************************************************
 
-Copyright © 2018-2019 Andrey Cheprasov <ae.cheprasov@gmail.com>
+Copyright © 2019 Andrey Cheprasov <ae.cheprasov@gmail.com>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -17,31 +17,51 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 ******************************************************************************/
 
-#ifndef FF_TOOLS_H
-#define FF_TOOLS_H
+#ifndef FF_EQUALIZER_H
+#define FF_EQUALIZER_H
 
-#include <QString>
+#include <vector>
 
-extern "C" {
-#include <libavformat/avformat.h>
-#include <libavutil/opt.h>
-#include <libavutil/time.h>
-#include <libswresample/swresample.h>
-#include <libavfilter/avfilter.h>
-#include <libavfilter/buffersink.h>
-#include <libavfilter/buffersrc.h>
-}
+#include "ff_tools.h"
 
-#include "track_metadata.h"
+struct FFEqualizerContext;
 
-void avLogToQDebug();
-void avLogSetEnabled(bool state);
+struct EQBand
+{
+    int frequency;
+    int width;
+    double gain;
+};
 
-QString ffErrorString(int code);
+typedef std::vector <EQBand> EQBands;
 
-QString timeToStringSec(int64_t t);
-QString timeToStringMSec(int64_t t);
+struct EQParams
+{
+    EQBands bands;
+    double volume_manual=0.;
+    double volume_value=0.;
+    bool volume_auto=false;
+};
 
-TrackMetadata readMetadata(const QString &filename);
+class FFEqualizer
+{
+public:
+    FFEqualizer();
+    ~FFEqualizer();
 
-#endif // FF_TOOLS_H
+    void setup(EQParams params);
+
+    bool proc(AVFrame *frame);
+
+private:
+    int init();
+    void free();
+
+    FFEqualizerContext *d;
+};
+
+Q_DECLARE_METATYPE(EQBand)
+Q_DECLARE_METATYPE(EQBands)
+Q_DECLARE_METATYPE(EQParams)
+
+#endif // FF_EQUALIZER_H

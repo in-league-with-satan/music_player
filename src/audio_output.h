@@ -54,6 +54,8 @@ public slots:
 
     void skipSilence(bool enabled);
 
+    void setupEq(const EQParams &params);
+
     void init();
 
 private:

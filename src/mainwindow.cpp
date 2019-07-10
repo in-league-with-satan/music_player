@@ -42,6 +42,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "lastfm_ctrl.h"
 #include "cover_view.h"
 #include "img_src.h"
+#include "equalizer_view.h"
 
 #include "mainwindow.h"
 
@@ -50,10 +51,13 @@ MainWindow::MainWindow(QWidget *parent)
 {
     qRegisterMetaType<FFDecStats>("FFDecStats");
     qRegisterMetaType<TrackMetadata>("TrackMetadata");
+    qRegisterMetaType<EQParams>("EQParams");
 
     setAcceptDrops(true);
 
     connect(settings, SIGNAL(updated()), SLOT(applySettings()));
+
+    equalizer_view=new EqualizerView();
 
     lastfm=new LastfmCtrl();
 
@@ -63,6 +67,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(menu_bar, SIGNAL(lastfmOnline(bool)), lastfm, SIGNAL(setOnline(bool)));
     connect(lastfm, SIGNAL(cacheSize(qint64)), menu_bar, SLOT(setLastfmCacheSize(qint64)));
     connect(lastfm, SIGNAL(badauth()), menu_bar, SLOT(lastfmBadauth()));
+    connect(menu_bar, SIGNAL(showEqualizer()), SLOT(setupEqualizer()));
 
     setMenuBar(menu_bar);
 
@@ -217,6 +222,7 @@ MainWindow::~MainWindow()
     settings->main.playlist=playlist_view->savePlaylist();
     settings->main.playlist_index=playlist_view->currentIndex();
     settings->main.volume_level=volume_level->value();
+    settings->equalizer=equalizer_view->getPresets();
 
     settings->save();
 }
@@ -300,6 +306,12 @@ void MainWindow::applySettings()
     //
 
     audio_output->setDevice(settings->output_device.use_default, settings->output_device.dev_name);
+
+    //
+
+    equalizer_view->setPresets(settings->equalizer);
+
+    audio_output->setupEq(equalizer_view->params(false));
 }
 
 void MainWindow::onDurationChanged(qint64 duration)
@@ -329,11 +341,17 @@ void MainWindow::updateStatus(FFDecStats stats)
                              );
 }
 
+void MainWindow::setupEqualizer()
+{
+    if(equalizer_view->exec()==QDialog::Accepted) {
+        audio_output->setupEq(equalizer_view->params(false));
+    }
+}
+
 void MainWindow::dragEnterEvent(QDragEnterEvent *event)
 {
     if(event->mimeData()->hasUrls())
         event->acceptProposedAction();
-
 }
 
 void MainWindow::dropEvent(QDropEvent *event)

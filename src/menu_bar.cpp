@@ -1,6 +1,6 @@
 /******************************************************************************
 
-Copyright © 2018 Andrey Cheprasov <ae.cheprasov@gmail.com>
+Copyright © 2018-2019 Andrey Cheprasov <ae.cheprasov@gmail.com>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -31,6 +31,10 @@ MenuBar::MenuBar(QWidget *parent)
     QAction *action=menu_edit->addAction("settings");
     action->setShortcut(QKeySequence::fromString("ctrl+p"));
     connect(action, SIGNAL(triggered(bool)), SIGNAL(showSettings()));
+
+    action=menu_edit->addAction("equalizer");
+    action->setShortcut(QKeySequence::fromString("ctrl+e"));
+    connect(action, SIGNAL(triggered(bool)), SIGNAL(showEqualizer()));
 
     QMenu *menu_view=new QMenu("view");
 

@@ -31,6 +31,7 @@ class AudioOutputThread;
 class Progress;
 class LastfmCtrl;
 class CoverView;
+class EqualizerView;
 
 class MainWindow : public QMainWindow
 {
@@ -59,6 +60,7 @@ private slots:
     void onPosChanged(qint64 pos);
     void onPlayRequest(QString);
     void updateStatus(FFDecStats stats);
+    void setupEqualizer();
 
 protected:
     virtual void dragEnterEvent(QDragEnterEvent *event);
@@ -77,6 +79,8 @@ private:
 
     Progress *volume_level;
     Progress *progress;
+
+    EqualizerView *equalizer_view;
 
     SettingsView *settings_view;
 };
