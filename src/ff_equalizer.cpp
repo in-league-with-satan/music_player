@@ -58,7 +58,7 @@ int FFEqualizer::init()
 {
     free();
 
-    qInfo() << "FFEqualizer::init: d->params.size" << d->eq_bands.size();
+    qDebug() << "FFEqualizer::init: d->params.size" << d->eq_bands.size();
 
     if(d->eq_bands.size()<1)
         return AVERROR_INVALIDDATA;
@@ -191,7 +191,7 @@ int FFEqualizer::init()
         return ret;
     }
 
-    qCritical() << "filter graph ok";
+    qDebug() << "filter graph ok";
 
     return 0;
 }
@@ -212,7 +212,7 @@ bool FFEqualizer::proc(AVFrame *frame)
         return false;
 
     if(!d->filter_graph || d->sample_rate!=frame->sample_rate || d->format!=frame->format || d->channels!=frame->channels) {
-        qInfo() << "init" << frame->sample_rate << frame->format << frame->channels;
+        qDebug() << "init" << frame->sample_rate << frame->format << frame->channels;
         d->sample_rate=frame->sample_rate;
         d->format=frame->format;
         d->channels=frame->channels;

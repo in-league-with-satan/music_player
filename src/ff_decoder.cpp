@@ -32,6 +32,7 @@ public:
     AVCodec *codec=nullptr;
     AVCodecContext *codec_context=nullptr;
     AVFrame *frame=nullptr;
+    AVFrame *frame_eq=nullptr;
     SwrContext *convert_context=nullptr;
 
     FFEqualizer *equalizer;
@@ -113,6 +114,12 @@ FFDecoder::FFDecoder(QObject *parent)
     av_init_packet(&context->packet);
 
     context->frame=av_frame_alloc();
+
+    context->frame_eq=av_frame_alloc();
+    context->frame_eq->sample_rate=48000;
+    context->frame_eq->format=AV_SAMPLE_FMT_S16;
+    context->frame_eq->channels=2;
+    context->frame_eq->channel_layout=AV_CH_LAYOUT_STEREO;
 }
 
 FFDecoder::~FFDecoder()
@@ -120,6 +127,7 @@ FFDecoder::~FFDecoder()
     close();
 
     av_frame_unref(context->frame);
+    av_frame_unref(context->frame_eq);
 
     delete context->equalizer;
 
@@ -366,8 +374,6 @@ read_loop:
                         }
 
                         if(ret>=0) {
-                            context->equalizer->proc(context->frame);
-
                             uint8_t *out_samples;
 
                             int out_num_samples=av_rescale_rnd(swr_get_delay(context->convert_context, context->codec_context->sample_rate)
@@ -378,8 +384,16 @@ read_loop:
                             out_num_samples=swr_convert(context->convert_context, &out_samples, out_num_samples,
                                                         (const uint8_t**)&context->frame->extended_data[0], context->frame->nb_samples);
 
-                            QByteArray ba_readed((char*)out_samples, av_samples_get_buffer_size(nullptr, 2, out_num_samples, AV_SAMPLE_FMT_S16, 1));
 
+                            // av_samples_fill_arrays(context->frame_eq->data, context->frame_eq->linesize, out_samples,
+                            //                       context->frame_eq->channels, out_num_samples, (AVSampleFormat)context->frame_eq->format, 0);
+
+                            context->frame_eq->nb_samples=out_num_samples;
+                            context->frame_eq->data[0]=out_samples;
+
+                            context->equalizer->proc(context->frame_eq);
+
+                            QByteArray ba_readed((char*)context->frame_eq->data[0], av_samples_get_buffer_size(nullptr, 2, out_num_samples, AV_SAMPLE_FMT_S16, 1));
 
                             av_freep(&out_samples);
 
