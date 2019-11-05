@@ -50,6 +50,8 @@ private slots:
     void lastfmOnlineChanged(bool state);
 
 signals:
+    void openPlaylist();
+    void savePlaylist();
     void showSettings();
     void showEqualizer();
     void showLibrary(bool state);

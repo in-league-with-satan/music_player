@@ -56,6 +56,11 @@ public slots:
     void applySettings();
 
 private slots:
+    void dlgOpenPlaylist();
+    void dlgSavePlaylist();
+    void loadPlaylist();
+    void savePlaylist();
+    void saveSettingsCommon();
     void onDurationChanged(qint64 duration);
     void onPosChanged(qint64 pos);
     void onPlayRequest(QString);

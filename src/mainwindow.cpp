@@ -28,6 +28,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <QDragEnterEvent>
 #include <QDropEvent>
 #include <QMimeData>
+#include <QFileDialog>
+#include <QJsonDocument>
 #include <qcoreapplication.h>
 
 #include "filelist_view.h"
@@ -67,6 +69,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(menu_bar, SIGNAL(lastfmOnline(bool)), lastfm, SIGNAL(setOnline(bool)));
     connect(lastfm, SIGNAL(cacheSize(qint64)), menu_bar, SLOT(setLastfmCacheSize(qint64)));
     connect(lastfm, SIGNAL(badauth()), menu_bar, SLOT(lastfmBadauth()));
+    connect(menu_bar, SIGNAL(openPlaylist()), SLOT(dlgOpenPlaylist()));
+    connect(menu_bar, SIGNAL(savePlaylist()), SLOT(dlgSavePlaylist()));
     connect(menu_bar, SIGNAL(showEqualizer()), SLOT(setupEqualizer()));
 
     setMenuBar(menu_bar);
@@ -87,7 +91,8 @@ MainWindow::MainWindow(QWidget *parent)
     playlist_view=new PlaylistView();
     connect(playlist_view, SIGNAL(playRequest(QString)), audio_output, SIGNAL(setFile(QString)));
     connect(playlist_view, SIGNAL(playRequest(QString)), SLOT(onPlayRequest(QString)));
-    connect(playlist_view, SIGNAL(currentIndexRemoved()), SLOT(stop()));
+    connect(playlist_view, SIGNAL(playRequest(QString)), SLOT(saveSettingsCommon()));
+    connect(playlist_view, SIGNAL(listChanged()), SLOT(savePlaylist()));
     connect(playlist_view, SIGNAL(currentIndexRemoved()), SLOT(stop()));
     connect(playlist_view, SIGNAL(nowPlaying(TrackMetadata)), lastfm, SIGNAL(nowPlaying(TrackMetadata)));
 
@@ -208,8 +213,10 @@ MainWindow::MainWindow(QWidget *parent)
 
     setCentralWidget(w_central);
 
-    playlist_view->restorePlaylist(settings->main.playlist);
-    playlist_view->setIndex(settings->main.playlist_index);
+    if(settings->main.playlist.isEmpty())
+        settings->main.playlist=qApp->applicationDirPath() + "/playlist.json";
+
+    loadPlaylist();
 
     applySettings();
 }
@@ -219,12 +226,11 @@ MainWindow::~MainWindow()
     settings->main.geometry=saveGeometry();
     settings->main.state_window=lists_widgets->saveState();
     settings->main.state_table=playlist_view->saveState();
-    settings->main.playlist=playlist_view->savePlaylist();
-    settings->main.playlist_index=playlist_view->currentIndex();
-    settings->main.volume_level=volume_level->value();
     settings->equalizer=equalizer_view->getPresets();
 
-    settings->save();
+    saveSettingsCommon();
+
+    savePlaylist();
 }
 
 void MainWindow::restoreWindow()
@@ -312,6 +318,86 @@ void MainWindow::applySettings()
     equalizer_view->setPresets(settings->equalizer);
 
     audio_output->setupEq(equalizer_view->params(false));
+}
+
+void MainWindow::dlgOpenPlaylist()
+{
+    QString dir=settings->main.playlist;
+
+    if(dir.isEmpty())
+        dir=qApp->applicationDirPath() + "/playlist.json";
+
+    const QString filename=QFileDialog::getOpenFileName(this, "select playlist file", dir, "*.json");
+
+    if(filename.isEmpty())
+        return;
+
+    if(QString::compare(filename, Settings::filename(), Qt::CaseInsensitive)==0)
+        return;
+
+    stop();
+
+    settings->main.playlist=filename;
+    settings->main.playlist_index=0;
+
+    settings->save();
+
+    loadPlaylist();
+}
+
+void MainWindow::dlgSavePlaylist()
+{
+    QString dir=settings->main.playlist;
+
+    if(dir.isEmpty())
+        dir=qApp->applicationDirPath() + "/playlist.json";
+
+    const QString filename=QFileDialog::getSaveFileName(this, "select playlist file", dir, "*.json");
+
+    if(filename.isEmpty())
+        return;
+
+    if(QString::compare(filename, Settings::filename(), Qt::CaseInsensitive)==0)
+        return;
+
+    settings->main.playlist=filename;
+
+    settings->save();
+
+    savePlaylist();
+}
+
+void MainWindow::loadPlaylist()
+{
+    QFile file(settings->main.playlist);
+
+    if(!file.open(QFile::ReadOnly))
+        return;
+
+    playlist_view->restorePlaylist(QJsonDocument::fromJson(file.readAll()).toVariant().toList());
+    playlist_view->setIndex(settings->main.playlist_index);
+
+    file.close();
+}
+
+void MainWindow::savePlaylist()
+{
+    QFile file(settings->main.playlist);
+
+    if(!file.open(QFile::WriteOnly | QFile::Truncate))
+        return;
+
+    file.write(QJsonDocument::fromVariant(playlist_view->savePlaylist()).toJson());
+
+    file.close();
+}
+
+void MainWindow::saveSettingsCommon()
+{
+    settings->main.playlist_index=playlist_view->currentIndex();
+    settings->main.volume_level=volume_level->value();
+
+    settings->save();
 }
 
 void MainWindow::onDurationChanged(qint64 duration)

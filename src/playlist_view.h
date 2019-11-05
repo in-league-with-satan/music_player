@@ -1,6 +1,6 @@
 /******************************************************************************
 
-Copyright © 2018 Andrey Cheprasov <ae.cheprasov@gmail.com>
+Copyright © 2018-2019 Andrey Cheprasov <ae.cheprasov@gmail.com>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -104,6 +104,8 @@ signals:
     void currentIndexRemoved();
 
     void nowPlaying(TrackMetadata tmd);
+
+    void listChanged();
 };
 
 #endif // PLAYLIST_VIEW_H

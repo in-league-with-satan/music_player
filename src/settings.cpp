@@ -42,7 +42,7 @@ Settings *Settings::instance()
 
 //
 
-QString filename()
+QString Settings::filename()
 {
     return qApp->applicationDirPath() + "/music_player.json";
 }
@@ -86,7 +86,7 @@ bool Settings::load()
     main.geometry=QByteArray::fromBase64(map_main.value(QStringLiteral("geometry")).toByteArray());
     main.state_window=QByteArray::fromBase64(map_main.value(QStringLiteral("state_window")).toByteArray());
     main.state_table=QByteArray::fromBase64(map_main.value(QStringLiteral("state_table")).toByteArray());
-    main.playlist=map_main.value(QStringLiteral("playlist")).toList();
+    main.playlist=map_main.value(QStringLiteral("playlist")).toString();
     main.playlist_index=map_main.value(QStringLiteral("playlist_index"), 0).toInt();
     main.show_library=map_main.value(QStringLiteral("show_library"), true).toBool();
     main.show_cover=map_main.value(QStringLiteral("show_cover"), true).toBool();

@@ -245,6 +245,7 @@ void PlaylistView::setIndex(int index)
         table->selectRow(index);
         table->scrollTo(model_index, QTableView::PositionAtCenter);
         table->scrollTo(model_index, QTableView::PositionAtCenter); // dirty hack? X_x
+        table->repaint();
     }
 
     if(table->selectionModel()->selectedRows().isEmpty())
@@ -273,6 +274,8 @@ void PlaylistView::updatePlaylist(const QStringList &list, bool drop_prev)
 
     if(drop_prev)
         makePlayRequest();
+
+    emit listChanged();
 }
 
 void PlaylistView::startPlaying(const QModelIndex &index)
@@ -441,4 +444,6 @@ void PlaylistView::removeRows()
 
         emit currentIndexRemoved();
     }
+
+    emit listChanged();
 }

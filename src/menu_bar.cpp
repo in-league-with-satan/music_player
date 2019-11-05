@@ -26,9 +26,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 MenuBar::MenuBar(QWidget *parent)
     : QMenuBar(parent)
 {
+    QAction *action;
+
+    QMenu *menu_file=new QMenu("file");
+
+    action=menu_file->addAction("open playlist");
+    connect(action, SIGNAL(triggered(bool)), SIGNAL(openPlaylist()));
+
+    action=menu_file->addAction("save playlist");
+    connect(action, SIGNAL(triggered(bool)), SIGNAL(savePlaylist()));
+
     QMenu *menu_edit=new QMenu("edit");
 
-    QAction *action=menu_edit->addAction("settings");
+    action=menu_edit->addAction("settings");
     action->setShortcut(QKeySequence::fromString("ctrl+p"));
     connect(action, SIGNAL(triggered(bool)), SIGNAL(showSettings()));
 
@@ -75,6 +85,7 @@ MenuBar::MenuBar(QWidget *parent)
     a_lastfm_cache_size=menu_lastfm->addAction("cache size: 0");
     a_lastfm_cache_size->setEnabled(false);
 
+    addMenu(menu_file);
     addMenu(menu_edit);
     addMenu(menu_view);
     addMenu(menu_lastfm);

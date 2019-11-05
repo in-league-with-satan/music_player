@@ -36,6 +36,8 @@ public:
     static Settings *createInstance(QObject *parent=0);
     static Settings *instance();
 
+    static QString filename();
+
     bool load();
     bool save();
 
@@ -45,7 +47,7 @@ public:
         QByteArray geometry;
         QByteArray state_window;
         QByteArray state_table;
-        QVariantList playlist;
+        QString playlist;
         int playlist_index;
         bool filter_empty_dirs;
         bool show_library;
