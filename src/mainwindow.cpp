@@ -32,6 +32,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <QJsonDocument>
 #include <qcoreapplication.h>
 
+#ifdef LIB_HOTKEY
+#  include "qhotkey.h"
+#endif
+
 #include "filelist_view.h"
 #include "playlist_view.h"
 #include "ff_tools.h"
@@ -219,6 +223,8 @@ MainWindow::MainWindow(QWidget *parent)
     loadPlaylist();
 
     applySettings();
+
+    initHotkeys();
 }
 
 MainWindow::~MainWindow()
@@ -449,5 +455,26 @@ void MainWindow::dropEvent(QDropEvent *event)
     }
 
     filelist_view->tryAddUrls(list);
+}
+
+void MainWindow::initHotkeys()
+{
+#ifdef LIB_HOTKEY
+
+    QHotkey *hotkey;
+
+    hotkey=new QHotkey(Qt::Key_MediaPlay, Qt::NoModifier, true, this);
+    connect(hotkey, &QHotkey::activated, [this](){ playPause(); });
+
+    hotkey=new QHotkey(Qt::Key_MediaPause, Qt::NoModifier, true, this);
+    connect(hotkey, &QHotkey::activated, [this](){ playPause(); });
+
+    hotkey=new QHotkey(Qt::Key_MediaPrevious, Qt::NoModifier, true, this);
+    connect(hotkey, &QHotkey::activated, [this](){ playlist_view->prev(); });
+
+    hotkey=new QHotkey(Qt::Key_MediaNext, Qt::NoModifier, true, this);
+    connect(hotkey, &QHotkey::activated, [this](){ playlist_view->next(); });
+
+#endif
 }
 

@@ -72,6 +72,8 @@ protected:
     virtual void dropEvent(QDropEvent *event);
 
 private:
+    void initHotkeys();
+
     QMainWindow *lists_widgets;
     FilelistView *filelist_view;
     PlaylistView *playlist_view;

@@ -36,6 +36,11 @@ RCC_DIR     = $$BUILD_OPT/$$QT_VERSION-$$LINK_OPT/rcc
 
 include($$PWD/externals/3rdparty/ffmpeg/ffmpeg.pri)
 
+exists($$PWD/externals/3rdparty/hotkey/qhotkey.pri) {
+    include($$PWD/externals/3rdparty/hotkey/qhotkey.pri)
+    DEFINES += LIB_HOTKEY
+}
+
 INCLUDEPATH += \
     $$PWD/src
 
