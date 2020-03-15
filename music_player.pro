@@ -45,10 +45,10 @@ INCLUDEPATH += \
     $$PWD/src
 
 SOURCES += \
-    $$PWD/src/*.cpp
+    $$files($$PWD/src/*.cpp)
 
 HEADERS += \
-    $$PWD/src/*.h
+    $$files($$PWD/src/*.h)
 
 RESOURCES += \
     $$PWD/images.qrc
